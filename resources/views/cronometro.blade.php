@@ -1,18 +1,14 @@
 @extends('layouts.app')
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Receso de Trabajadores</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    @vite(['resources/css/style.css', 'resources/js/script.js'])
-</head>
 
+@section('title', 'Control de Receso de Trabajadores') <!-- Título para la sección title -->
+
+@section('head') <!-- Sección opcional si necesitas añadir algo extra en el head -->
+    @vite(['resources/css/styles.css', 'resources/js/script.js'])
+@endsection
+
+@section('content')
 <body onload="iniciarContadores()" class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
-
-        <!-- Contenido principal -->
         <div class="content-wrapper">
             <section class="content">
                 <div class="container-fluid">
@@ -64,7 +60,8 @@
             </section>
         </div>
     </div>
+@endsection
 
+@section('scripts') <!-- Sección opcional para cargar scripts adicionales -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+@endsection

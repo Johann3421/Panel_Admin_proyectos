@@ -1,7 +1,7 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <a href="{{ url('/') }}" class="brand-link">
         <div class="logo">
-            <img src="{{ asset('imagenes/logo_dre.png') }}" alt="Logo de la marca" class="brand-image img-circle elevation-3">
+            <img src="{{ Vite::asset('resources/images/logo_dre.png') }}" alt="Logo de la marca" class="brand-image img-circle elevation-3">
             <span class="brand-text font-weight-light">DRE-HUÁNUCO</span>
         </div>
     </a>
