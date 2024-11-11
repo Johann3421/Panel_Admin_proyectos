@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Visita;
+use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Support\Facades\DB;
@@ -16,13 +18,13 @@ class ExportarExcelController extends Controller
 
         // Escribir los encabezados
         $sheet->setCellValue('A1', 'Nro.')
-              ->setCellValue('B1', 'Fecha de visita')
-              ->setCellValue('C1', 'Visitante')
-              ->setCellValue('D1', 'Documento del visitante')
-              ->setCellValue('E1', 'Hora Ingreso')
-              ->setCellValue('F1', 'Hora Salida')
-              ->setCellValue('G1', 'Motivo')
-              ->setCellValue('H1', 'Lugar Específico');
+            ->setCellValue('B1', 'Fecha de visita')
+            ->setCellValue('C1', 'Visitante')
+            ->setCellValue('D1', 'Documento del visitante')
+            ->setCellValue('E1', 'Hora Ingreso')
+            ->setCellValue('F1', 'Hora Salida')
+            ->setCellValue('G1', 'Motivo')
+            ->setCellValue('H1', 'Lugar Específico');
 
         // Obtener los datos de la tabla visitas
         $visitas = DB::table('visitas')->get();
@@ -31,13 +33,13 @@ class ExportarExcelController extends Controller
 
         foreach ($visitas as $visita) {
             $sheet->setCellValue('A' . $rowIndex, $nro++)
-                  ->setCellValue('B' . $rowIndex, $visita->fecha)
-                  ->setCellValue('C' . $rowIndex, $visita->nombre)
-                  ->setCellValue('D' . $rowIndex, $visita->dni)
-                  ->setCellValue('E' . $rowIndex, $visita->hora_ingreso)
-                  ->setCellValue('F' . $rowIndex, $visita->hora_salida)
-                  ->setCellValue('G' . $rowIndex, $visita->smotivo)
-                  ->setCellValue('H' . $rowIndex, $visita->lugar);
+                ->setCellValue('B' . $rowIndex, $visita->fecha)
+                ->setCellValue('C' . $rowIndex, $visita->nombre)
+                ->setCellValue('D' . $rowIndex, $visita->dni)
+                ->setCellValue('E' . $rowIndex, $visita->hora_ingreso)
+                ->setCellValue('F' . $rowIndex, $visita->hora_salida)
+                ->setCellValue('G' . $rowIndex, $visita->smotivo)
+                ->setCellValue('H' . $rowIndex, $visita->lugar);
             $rowIndex++;
         }
 
@@ -52,4 +54,16 @@ class ExportarExcelController extends Controller
         $writer->save('php://output');
         exit;
     }
+    public function imprimirTicket($id)
+{
+    // Obtener la información de la visita por su ID
+    $visita = Visita::findOrFail($id);
+
+    // Crear el PDF con una vista específica
+    $pdf = Pdf::loadView('visitas.ticket', compact('visita'));
+
+    // Mostrar el PDF en el navegador (sin descarga directa)
+    return $pdf->stream('ticket_visita_' . $id . '.pdf');
+}
+
 }

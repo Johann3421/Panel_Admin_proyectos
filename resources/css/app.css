@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* Define el tamaño de los íconos en la paginación */
+.pagination svg {
+    width: 1rem;  /* Ajusta el ancho del icono */
+    height: 1rem; /* Ajusta el alto del icono */
+}

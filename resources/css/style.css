@@ -1,0 +1,217 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;800&display=swap');
+.nav-links {
+    display: flex;
+    gap: 15px;
+}
+
+.nav-links li {
+    list-style: none;
+}
+
+.nav-links li a {
+    color: white;
+    text-decoration: none;
+}
+
+.btn {
+    background-color: white;
+    color: #1367C8;
+    border-radius: 4px;
+    padding: 5px 15px;
+}
+
+/* Layout for main content */
+
+
+/* Flexbox for the left and right sections */
+.row {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.left-section,
+.right-section {
+    width: 48%;
+    margin-bottom: 20px;
+}
+
+.search-worker {
+    margin-bottom: 40px;
+}
+
+#searchWorker {
+    width: 100%;
+}
+
+#searchResult div {
+    cursor: pointer;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-bottom: 1px solid #ccc;
+}
+
+#searchResult div:hover {
+    background-color: #ddd;
+}
+
+/* Clock section styling */
+.clock-container {
+    display: flex;
+    justify-content: center; /* Centrar horizontalmente */
+    align-items: center;     /* Centrar verticalmente */
+    height: 100%;            /* Asegura que ocupe el 100% del contenedor padre */
+}
+
+.clock {
+    position: relative;
+    width: 250px;
+    height: 250px;
+    margin-bottom: 20px;
+}
+
+.clock .circle {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.digital-clock {
+    font-size: 24px;
+}
+
+.digital-clock .time {
+    font-size: 2em;          /* Ajusta el tamaño de fuente según prefieras */
+    color: #333;             /* Color del texto */
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+/* Break timer box */
+.worker-box {
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 40px;
+}
+
+.worker-box h4 {
+    text-align: center;
+    font-weight: bold;
+    color: #1367C8;
+}
+
+.timer {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0;
+}
+
+.btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Informe section styling */
+.report-box {
+    background-color: #f0f0f0;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+.report-box h4 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+
+    .left-section,
+    .right-section {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+}
+.digital-clock {
+    background: #2f363e;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 10px 50px 70px rgba(254, 254, 254, 0.25);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 300px;
+    height: 150px;
+    margin: 0 auto;
+}
+
+.time {
+    color: #fff;
+    font-size: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.time span {
+    color: #ffffff;
+    font-weight: 600;
+    text-shadow: 0 0 20px #0b9be8, 0 0 60px #04fc43;
+}
+
+.time .hour, .time .minute, .time .second {
+    min-width: 50px; /* Asegura que las horas, minutos y segundos tengan el mismo ancho */
+    text-align: center;
+}
+
+.time .hour {
+    color: #ffffff;
+}
+
+.time .minute {
+    color: #ffffff;
+}
+
+.time .second {
+    color: #ffffff;
+}
+
+.time .ampm {
+    color: #fff;
+    font-size: 20px;
+    margin-left: 10px;
+    align-self: flex-end;
+}
+
+
+/* Asegurarse de que los estilos sean visualmente claros */
+.contador {
+    padding: 10px;
+    color: white;
+    font-weight: bold;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.contador-verde {
+    background-color: green;
+}
+
+.contador-rojo {
+    background-color: red;
+}

@@ -1,28 +1,37 @@
 function buscarPorDNI() {
-    var dni = document.getElementById("ndocu").value;
+  const dni = document.getElementById("dni").value;
 
-    if (dni.length === 8) { // Asegúrate de que el DNI tenga 8 caracteres
-      var xhr = new XMLHttpRequest();
-      xhr.open("POST", "buscar_dni.php", true);
+  if (dni.length === 8) { // Validar que el DNI tenga 8 dígitos
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/buscar-dni", true);
+
+      // Configura los encabezados necesarios
       xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      xhr.setRequestHeader("X-CSRF-TOKEN", document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
       xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          var response = JSON.parse(xhr.responseText);
+          if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                  const response = JSON.parse(xhr.responseText);
 
-          if (response.success) {
-            document.getElementById("nombre").value = response.nombre;
-            document.getElementById("dni_error").innerHTML = "";
-          } else {
-            document.getElementById("dni_error").innerHTML = response.error;
-            document.getElementById("nombre").value = ""; // Limpia el campo de nombre en caso de error
+                  if (response.success) {
+                      document.getElementById("nombre").value = response.nombre;
+                      document.getElementById("dni_error").innerHTML = "";
+                  } else {
+                      document.getElementById("dni_error").innerHTML = response.error;
+                      document.getElementById("nombre").value = ""; // Limpia el campo en caso de error
+                  }
+              } else {
+                  document.getElementById("dni_error").innerHTML = "Error en la solicitud.";
+              }
           }
-        }
       };
 
       xhr.send("dni=" + dni);
-    }
   }
+}
+
+
   function abrirModal(id) {
     // Mostrar modal para registrar salida y observaciones
     var modalHtml = `

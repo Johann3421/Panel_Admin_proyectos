@@ -5,8 +5,8 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
-                'resources/css/styles.css', // Incluye tu archivo CSS aquí
-                'resources/js/script.js'      // Incluye otros archivos que necesites
+                'resources/css/styles.css', 'resources/css/style.css',
+                'resources/js/app.js', 'resources/js/script.js'
             ],
             refresh: true,
         }),

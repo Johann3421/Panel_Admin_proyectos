@@ -7,7 +7,7 @@
     <h1>Reporte de Recesos</h1>
 
     <div class="mb-3">
-        <a href="{{ route('recesos.export') }}" class="btn btn-success">Exportar a Excel</a>
+        <a href="{{ route('reporte.export') }}" class="btn btn-success">Exportar a Excel</a>
     </div>
 
     <form method="GET" action="{{ route('recesos.index') }}" class="row mb-4">

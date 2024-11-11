@@ -15,9 +15,11 @@
     <!-- AdminLTE CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
 
-    <!-- Estilos propios -->
-    @vite('resources/css/styles.css')
+    <!-- Estilos propios y JavaScript -->
+    @vite(['resources/css/styles.css', 'resources/js/script.js'])
+    
 </head>
 
 <body>
@@ -48,3 +50,4 @@
 </body>
 
 </html>
+
