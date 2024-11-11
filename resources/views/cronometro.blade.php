@@ -28,6 +28,7 @@
                     <label for="recesoDuration" class="form-label">Duración del Receso:</label>
                     <select id="recesoDuration" class="form-select">
                         <option value="15">15 minutos</option>
+                        <option value="1">1 minuto</option>
                     </select>
                 </div>
                 <div class="btn-group">
@@ -65,63 +66,63 @@
             </thead>
             <tbody id="tbody-visitas" onclick="manejarClickBoton(event)">
                 @forelse ($trabajadores as $index => $trabajador)
-                <tr id="fila_{{ $trabajador->id }}">
-                    <td>{{ $index + 1 }}</td>
-                    <td>{{ $trabajador->nombre }}</td>
-                    <td>{{ $trabajador->dni }}</td>
-                    <td>{{ $trabajador->hora_receso }}</td>
-                    <td>{{ $trabajador->hora_vuelta ?? 'N/A' }}</td>
-                    <td><span id="contador-{{ $trabajador->id }}" class="contador contador-verde"></span></td>
-                    <td>
-                        <button class="btn btn-danger" onclick="finalizarReceso({{ $trabajador->id }})">
-                            <i class="fas fa-stop"></i> Finalizar
-                        </button>
-                    </td>
-                </tr>
+                    <tr id="fila_{{ $trabajador->id }}">
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ $trabajador->nombre }}</td>
+                        <td>{{ $trabajador->dni }}</td>
+                        <td>{{ $trabajador->hora_receso }}</td>
+                        <td>{{ $trabajador->hora_vuelta ?? 'N/A' }}</td>
+                        <td>
+                            <span id="contador-{{ $trabajador->id }}" class="contador contador-verde"></span>
+                        </td>
+                        <td>
+                            <button class="btn btn-danger" onclick="finalizarReceso({{ $trabajador->id }})">
+                                <i class="fas fa-stop"></i> Finalizar
+                            </button>
+                        </td>
+                    </tr>
                 @empty
-                <tr>
-                    <td colspan="7" class="text-center">No hay datos disponibles</td>
-                </tr>
+                    <tr>
+                        <td colspan="7" class="text-center">No hay datos disponibles</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
+    
+    
 </section>
 @endsection
 
 <script>
-    // resources/js/script.js
+let recesosActivos = {};
+let numeroFila = 1;
+let tiemposRestantes = {};
 
-    let recesosActivos = {};
-    let tiemposRestantes = {};
+function registrarReceso() {
+    const id = document.getElementById('worker-id').value;
+    const nombre = document.getElementById('worker-name').value;
+    const dni = document.getElementById('dniWorker').value;
+    const duracion = document.getElementById('recesoDuration').value;
 
-    function registrarReceso() {
-        const id = document.getElementById('worker-id').value;
-        const nombre = document.getElementById('worker-name').value;
-        const dni = document.getElementById('dniWorker').value;
-        const duracion = document.getElementById('recesoDuration').value;
+    if (!id || !nombre || !dni || !duracion) {
+        alert("Por favor, complete todos los campos antes de iniciar el receso.");
+        return;
+    }
 
-        if (!id || !nombre || !dni || !duracion) {
-            alert("Por favor, complete todos los campos antes de iniciar el receso.");
-            return;
-        }
-
-        fetch(route('cronometro.registrar'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: new URLSearchParams({
-                    id,
-                    duracion
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const horaReceso = data.hora_receso;
-                    const newRow = `
+    fetch(registrarRecesoUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: new URLSearchParams({ id, duracion })  // Enviar la duración en minutos al backend
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const horaReceso = data.hora_receso;
+            const newRow = `
                 <tr id="fila_${id}">
                     <td>${document.querySelectorAll('#tbody-visitas tr').length + 1}</td>
                     <td>${nombre}</td>
@@ -129,69 +130,127 @@
                     <td>${horaReceso}</td>
                     <td>N/A</td>
                     <td><span id="contador-${id}" class="contador contador-verde">${duracion}:00</span></td>
-                    <td><button class="btn btn-danger" onclick="finalizarReceso(${id})"><i class="fas fa-stop"></i> Finalizar</button></td>
+                    <td><button class="btn btn-danger" onclick="finalizarReceso(${id})">
+                                <i class="fas fa-stop"></i> Finalizar
+                            </button></td>
                 </tr>`;
-                    document.getElementById('tbody-visitas').insertAdjacentHTML('beforeend', newRow);
-                    iniciarContador(id, duracion * 60);
-                } else {
-                    alert(data.message || "Hubo un error al registrar el receso.");
-                }
-            })
-            .catch(error => console.error('Error:', error));
-    }
+            document.getElementById('tbody-visitas').insertAdjacentHTML('beforeend', newRow);
 
-
-    function finalizarReceso(id) {
-        const contadorElemento = document.getElementById(`contador-${id}`);
-
-        if (!contadorElemento || contadorElemento.textContent === "00:00") {
-            alert("El receso ya ha terminado o no está activo.");
-            return;
+            // Iniciar el contador en segundos para mostrar en la interfaz
+            iniciarContador(id, duracion * 60);
+        } else {
+            alert(data.message || "Hubo un error al registrar el receso.");
         }
+    })
+    .catch(error => console.error('Error:', error));
+}
 
-        fetch("{{ route('cronometro.finalizar') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    id
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const horaVuelta = data.hora_vuelta;
-                    const fila = document.getElementById(`fila_${id}`);
-                    if (fila) {
-                        fila.cells[4].textContent = horaVuelta;
-                    }
-                    clearInterval(recesosActivos[id]);
-                    delete recesosActivos[id];
-                    contadorElemento.textContent = "00:00";
-                } else {
-                    alert(data.message || "Hubo un error al finalizar el receso.");
-                }
-            })
-            .catch(error => console.error('Error:', error));
+
+
+function iniciarContador(id, tiempoRestante, enTiempoExtra = false) {
+    const contadorElemento = document.getElementById(`contador-${id}`);
+    if (!contadorElemento) return;
+
+    clearInterval(recesosActivos[id]);  // Reinicia el intervalo en caso de que exista
+    recesosActivos[id] = setInterval(() => {
+        if (!enTiempoExtra && tiempoRestante > 0) {
+            const minutos = Math.floor(tiempoRestante / 60);
+            const segundos = tiempoRestante % 60;
+            contadorElemento.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+            tiempoRestante--;
+        } else {
+            if (!enTiempoExtra) {
+                contadorElemento.classList.replace('contador-verde', 'contador-rojo');
+                tiempoRestante = 0;
+                enTiempoExtra = true;
+            }
+            const minutos = Math.floor(Math.abs(tiempoRestante) / 60);
+            const segundos = Math.abs(tiempoRestante) % 60;
+            contadorElemento.textContent = `-${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+            tiempoRestante--; // Continúa el tiempo extra
+        }
+    }, 1000);
+}
+
+
+function finalizarReceso(id) {
+    const contadorElemento = document.getElementById(`contador-${id}`);
+
+    if (!contadorElemento || contadorElemento.textContent === "00:00") {
+        alert("El receso ya ha terminado o no está activo.");
+        return;
     }
 
-    function iniciarContadores() {
-        fetch("{{ route('cronometro.tiemposRestantes') }}")
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    data.trabajadores.forEach(trabajador => {
-                        iniciarContador(trabajador.id, trabajador.tiempo_restante, trabajador.en_tiempo_extra);
-                    });
-                } else {
-                    console.error("Error al obtener los tiempos restantes:", data.message);
-                }
-            })
-            .catch(error => console.error('Error en la solicitud de tiempos restantes:', error));
-    }
+    fetch(finalizarRecesoUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: new URLSearchParams({ id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const horaVuelta = data.hora_vuelta;
+            const fila = document.getElementById(`fila_${id}`);
+            if (fila) fila.cells[4].textContent = horaVuelta;
 
-    function buscarTrabajador() {
+            clearInterval(recesosActivos[id]);
+            delete recesosActivos[id];
+            contadorElemento.textContent = "00:00";
+            localStorage.removeItem(`receso_${id}`);
+            setTimeout(() => fila.remove(), 1000);
+        } else {
+            alert(data.message || "Hubo un error al finalizar el receso.");
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+
+function iniciarContadores() {
+    fetch(tiemposRestantesUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            data.trabajadores.forEach(trabajador => {
+                iniciarContador(trabajador.id, trabajador.tiempo_restante, trabajador.en_tiempo_extra);
+            });
+        } else {
+            console.error("Error al obtener los tiempos restantes:", data.message);
+        }
+    })
+    .catch(error => console.error('Error en la solicitud de tiempos restantes:', error));
+}
+
+function alternarPausaReanudar(id, boton) {
+    const icono = boton.querySelector('i');
+    const contadorElemento = document.getElementById(`contador-${id}`);
+    const pausado = boton.getAttribute('data-pausado') === 'true';
+
+    if (pausado) {
+        iniciarContador(id, tiemposRestantes[id]);
+        boton.innerHTML = '<i class="fas fa-pause"></i> Pausar';
+        boton.classList.replace('btn-success', 'btn-warning');
+        boton.setAttribute('data-pausado', 'false');
+    } else {
+        clearInterval(recesosActivos[id]);
+        delete recesosActivos[id];
+
+        const [minutos, segundos] = contadorElemento.textContent.split(':').map(Number);
+        tiemposRestantes[id] = minutos * 60 + segundos;
+
+        boton.innerHTML = '<i class="fas fa-play"></i> Reanudar';
+        boton.classList.replace('btn-warning', 'btn-success');
+        boton.setAttribute('data-pausado', 'true');
+    }
+}
+
+function buscarTrabajador() {
         const query = document.getElementById('searchWorker').value;
 
         if (query.length > 2) {
@@ -218,7 +277,7 @@
         }
     }
 
-    function seleccionarTrabajador(id, nombre, dni) {
+function seleccionarTrabajador(id, nombre, dni) {
         document.getElementById('worker-id').value = id;
         document.getElementById('worker-name').value = nombre;
         document.getElementById('dniWorker').value = dni;
@@ -227,7 +286,7 @@
         document.getElementById('searchResult').innerHTML = ''; // Limpiar resultados de búsqueda
     }
 
-    function actualizarRelojDigital() {
+function actualizarRelojDigital() {
         const reloj = document.querySelector('.digital-clock .time');
         const ahora = new Date();
         reloj.querySelector('.hour').textContent = String(ahora.getHours()).padStart(2, '0');
@@ -237,4 +296,10 @@
     }
 
     setInterval(actualizarRelojDigital, 1000);
+    const registrarRecesoUrl = "{{ route('cronometro.registrar') }}";
+    const finalizarRecesoUrl = "{{ route('cronometro.finalizar') }}";
+    const tiemposRestantesUrl = "{{ route('cronometro.tiemposRestantes') }}";
+    document.addEventListener("DOMContentLoaded", function() {
+    iniciarContadores(); // Cargar los contadores cuando se carga la página
+});
 </script>

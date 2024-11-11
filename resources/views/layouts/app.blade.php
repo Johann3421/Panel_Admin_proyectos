@@ -15,7 +15,8 @@
     <!-- AdminLTE CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
 
     <!-- Estilos propios y JavaScript -->
     @vite(['resources/css/styles.css', 'resources/js/script.js'])
