@@ -3,63 +3,57 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Trabajador;
-use App\Models\Receso;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\RecesosExport;
 
 class RecesoController extends Controller
 {
-    public function registrarReceso(Request $request)
-    {
-        $request->validate([
-            'id' => 'required|integer',
-            'duracion' => 'required|integer'
-        ]);
+    public function index(Request $request)
+{
+    // Obtener filtros de búsqueda y fechas
+    $busqueda = $request->input('busqueda');
+    $desde = $request->input('desde');
+    $hasta = $request->input('hasta');
 
-        $worker_id = $request->input('id');
-        $duracion = $request->input('duracion');
-        $hora_receso = Carbon::now('America/Lima')->toDateTimeString();
+    // Consultar la tabla recesos con filtros, incluyendo el campo 'exceso'
+    $query = DB::table('recesos')->select(
+        'id', 'trabajador_id', 'nombre', 'dni', 'hora_receso', 
+        'hora_vuelta', 'duracion', 'estado', 'exceso'
+    );
 
-        // Iniciar una transacción para asegurar la consistencia de datos
-        DB::beginTransaction();
-
-        try {
-            // Actualizar la información del trabajador en la tabla `trabajadores`
-            $trabajador = Trabajador::where('id', $worker_id)->first();
-            if (!$trabajador) {
-                return response()->json(['status' => 'error', 'message' => 'Trabajador no encontrado.'], 404);
-            }
-
-            $trabajador->update([
-                'hora_receso' => $hora_receso,
-                'duracion' => $duracion,
-                'hora_vuelta' => null
-            ]);
-
-            // Registrar el receso en la tabla `recesos`
-            $receso = Receso::create([
-                'trabajador_id' => $worker_id,
-                'nombre' => $trabajador->nombre,
-                'dni' => $trabajador->dni,
-                'duracion' => $duracion,
-                'hora_receso' => $hora_receso,
-                'estado' => 'activo'
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'status' => 'success',
-                'id' => $worker_id,
-                'nombre' => $trabajador->nombre,
-                'dni' => $trabajador->dni,
-                'hora_receso' => $hora_receso,
-                'duracion' => $duracion
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['status' => 'error', 'message' => 'Error al registrar el receso.'], 500);
-        }
+    if ($busqueda) {
+        $query->where(function ($q) use ($busqueda) {
+            $q->where('nombre', 'like', '%' . $busqueda . '%')
+              ->orWhere('dni', 'like', '%' . $busqueda . '%');
+        });
     }
+
+    if ($desde) {
+        $query->whereDate('hora_receso', '>=', $desde);
+    }
+
+    if ($hasta) {
+        $query->whereDate('hora_receso', '<=', $hasta);
+    }
+
+    $recesos = $query->paginate(10);
+
+    return view('recesos', compact('recesos'));
+}
+
+
+
+    public function export(Request $request)
+{
+    // Proporcionar valores predeterminados para evitar el error de clave indefinida
+    $filters = [
+        'busqueda' => $request->input('busqueda', ''), // Valor predeterminado: cadena vacía
+        'desde' => $request->input('desde', ''),       // Valor predeterminado: cadena vacía
+        'hasta' => $request->input('hasta', '')        // Valor predeterminado: cadena vacía
+    ];
+
+    return Excel::download(new RecesosExport($filters), 'recesos.xlsx');
+}
+
 }

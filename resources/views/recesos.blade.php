@@ -3,62 +3,102 @@
 @section('title', 'Reporte de Recesos')
 
 @section('content')
-<div class="container my-4">
+<div class="container-fluid my-4">
     <h1>Reporte de Recesos</h1>
 
+    <!-- Botón para exportar a Excel -->
     <div class="mb-3">
-        <a href="{{ route('reporte.export') }}" class="btn btn-success">Exportar a Excel</a>
+        <a href="{{ route('recesos.export', ['busqueda' => request('busqueda'), 'desde' => request('desde'), 'hasta' => request('hasta')]) }}" class="btn btn-success">
+            Exportar a Excel
+        </a>
     </div>
 
-    <form method="GET" action="{{ route('recesos.index') }}" class="row mb-4">
-        <div class="col-md-3">
-            <label for="fecha-desde" class="form-label">Fecha Desde:</label>
-            <input type="date" id="fecha-desde" name="desde" class="form-control" value="{{ $fechaDesde }}">
+    <!-- Formulario de búsqueda y filtrado -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Búsqueda</h5>
         </div>
-        <div class="col-md-3">
-            <label for="fecha-hasta" class="form-label">Fecha Hasta:</label>
-            <input type="date" id="fecha-hasta" name="hasta" class="form-control" value="{{ $fechaHasta }}">
+        <div class="card-body">
+            <form method="GET" action="{{ route('recesos.index') }}" id="filtro-form">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label for="fecha-desde" class="form-label">Fecha Desde:</label>
+                        <input type="date" name="desde" id="fecha-desde" class="form-control" value="{{ request('desde') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="fecha-hasta" class="form-label">Fecha Hasta:</label>
+                        <input type="date" name="hasta" id="fecha-hasta" class="form-control" value="{{ request('hasta') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="busqueda" class="form-label">Buscar:</label>
+                        <input type="text" name="busqueda" class="form-control" placeholder="Buscar por nombre o DNI" value="{{ request('busqueda') }}">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Buscar</button>
+                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">Limpiar</button>
+            </form>
         </div>
-        <div class="col-md-4">
-            <label for="busqueda" class="form-label">Buscar por nombre o DNI:</label>
-            <input type="text" id="busqueda" name="busqueda" class="form-control" value="{{ $busqueda }}">
-        </div>
-        <div class="col-md-2 align-self-end">
-            <button type="submit" class="btn btn-primary">Buscar</button>
-        </div>
-    </form>
+    </div>
 
+    <!-- Tabla de resultados -->
     <div class="table-responsive">
         <table class="table table-bordered table-striped">
-            <thead>
+            <thead class="thead-dark">
                 <tr>
                     <th>Nro.</th>
-                    <th>Hora de Receso</th>
-                    <th>Trabajador</th>
+                    <th>Nombre</th>
                     <th>DNI</th>
-                    <th>Duración Usada (min)</th>
-                    <th>Exceso (min)</th>
+                    <th>Hora de Receso</th>
                     <th>Hora de Vuelta</th>
+                    <th>Duración</th>
+                    <th>Exceso</th> <!-- Nueva columna para 'exceso' -->
                     <th>Estado</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($recesos as $index => $receso)
-                    <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $receso->hora_receso }}</td>
-                        <td>{{ $receso->nombre }}</td>
-                        <td>{{ $receso->dni }}</td>
-                        <td>{{ $receso->duracion }}</td>
-                        <td>{{ $receso->exceso ?? 0 }}</td>
-                        <td>{{ $receso->hora_vuelta ?? 'Pendiente' }}</td>
-                        <td>{{ $receso->estado }}</td>
-                    </tr>
-                @endforeach
+                @forelse ($recesos as $index => $receso)
+                <tr>
+                    <td>{{ $index + 1 + ($recesos->currentPage() - 1) * $recesos->perPage() }}</td>
+                    <td>{{ $receso->nombre }}</td>
+                    <td>{{ $receso->dni }}</td>
+                    <td>{{ $receso->hora_receso }}</td>
+                    <td>{{ $receso->hora_vuelta }}</td>
+                    <td>{{ $receso->duracion }}</td>
+                    <td>{{ $receso->exceso }} min</td> <!-- Mostrar el campo 'exceso' -->
+                    <td>{{ $receso->estado }}</td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="8" class="text-center">No se encontraron resultados.</td> <!-- Ajustado a 8 columnas -->
+                </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
 
-    {{ $recesos->appends(request()->query())->links() }}
+    <!-- Paginación Simple sin Íconos -->
+<div class="d-flex justify-content-center">
+    <div class="pagination">
+        @if ($recesos->onFirstPage())
+        <span class="btn btn-secondary disabled">Anterior</span>
+        @else
+        <a href="{{ $recesos->previousPageUrl() }}" class="btn btn-primary">Anterior</a>
+        @endif
+
+        <span class="mx-2">Página {{ $recesos->currentPage() }} de {{ $recesos->lastPage() }}</span>
+
+        @if ($recesos->hasMorePages())
+        <a href="{{ $recesos->nextPageUrl() }}" class="btn btn-primary">Siguiente</a>
+        @else
+        <span class="btn btn-secondary disabled">Siguiente</span>
+        @endif
+    </div>
 </div>
+</div>
+
+<script>
+    function limpiarFiltros() {
+        window.location.href = "{{ route('recesos.index') }}";
+    }
+</script>
 @endsection

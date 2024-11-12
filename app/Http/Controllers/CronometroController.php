@@ -144,28 +144,36 @@ public function tiemposRestantes()
         ->whereNull('hora_vuelta')
         ->get()
         ->map(function ($trabajador) {
-            $horaReceso = Carbon::parse($trabajador->hora_receso);
-            $finReceso = $horaReceso->copy()->addMinutes($trabajador->duracion);
+            $horaReceso = Carbon::parse($trabajador->hora_receso, 'America/Lima');
             $ahora = Carbon::now('America/Lima');
 
-            // Calcula la duración restante en minutos
-            $intervaloMinutos = ceil($finReceso->diffInMinutes($ahora, false));
-            $duracionRestante = max(0, $intervaloMinutos);
+            // Fin del receso basado en `duracion` en minutos
+            $finReceso = $horaReceso->copy()->addMinutes($trabajador->duracion);
 
-            // Log detallado
-            \Log::info('Cálculo de Tiempos Restantes:', [
+            // Calcula la duración restante en minutos, redondeando hacia arriba
+            $duracionRestante = $finReceso->greaterThan($ahora)
+                ? ceil($ahora->diffInMinutes($finReceso, false))
+                : 0;
+
+            // Calcula el exceso en minutos si ya pasó el tiempo límite del receso
+            $exceso = $finReceso->lessThan($ahora)
+                ? $ahora->diffInMinutes($finReceso)
+                : 0;
+
+            // Log para verificación
+            \Log::info('Cálculo Final sin Decimales', [
                 'trabajador_id' => $trabajador->id,
-                'hora_receso' => $horaReceso->format('H:i:s'),
-                'fin_receso' => $finReceso->format('H:i:s'),
-                'hora_actual' => $ahora->format('H:i:s'),
-                'intervalo_minutos' => $intervaloMinutos,
+                'hora_receso' => $horaReceso->format('H:i'),
+                'duracion' => $trabajador->duracion,
+                'hora_actual' => $ahora->format('H:i'),
+                'fin_receso' => $finReceso->format('H:i'),
                 'duracionRestante' => $duracionRestante,
-                'en_tiempo_extra' => $intervaloMinutos < 0
+                'exceso' => $exceso
             ]);
 
-            // Asignación de valores finales
+            // Asignación final
             $trabajador->duracionRestante = $duracionRestante;
-            $trabajador->en_tiempo_extra = $intervaloMinutos < 0;
+            $trabajador->exceso = $exceso;
 
             return $trabajador;
         });

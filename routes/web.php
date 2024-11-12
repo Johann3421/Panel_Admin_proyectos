@@ -26,7 +26,9 @@ Route::post('/finalizar-receso', [CronometroController::class, 'finalizarReceso'
 Route::get('/tiempos-restantes', [CronometroController::class, 'tiemposRestantes'])->name('cronometro.tiemposRestantes');
 Route::get('/cronometro/buscar-trabajador', [CronometroController::class, 'buscarTrabajador'])->name('cronometro.buscarTrabajador');
 
-Route::get('/recesos', [RecesoController::class, 'index'])->name('recesos.index');
+Route::get('/recesos', [App\Http\Controllers\RecesoController::class, 'index'])->name('recesos.index');
+Route::get('/recesos/export', [App\Http\Controllers\RecesoController::class, 'export'])->name('recesos.export');
+
 
 Route::get('/visitas/{id}/imprimir-ticket', [ExportarExcelController::class, 'imprimirTicket'])->name('visitas.imprimirTicket');
 

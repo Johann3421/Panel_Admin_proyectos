@@ -231,7 +231,7 @@
         if (data.status === 'success') {
             data.trabajadores.forEach(trabajador => {
                 const id = trabajador.id;
-                const duracionTotalMinutos = 15; // Duración fija de 15 minutos en minutos
+                const duracionTotalMinutos = trabajador.duracionRestante; // Obtener la duración personalizada del backend
 
                 // Obtener o establecer el tiempo de inicio en `localStorage`
                 let startTime = localStorage.getItem(`inicioReceso_${id}`);
@@ -257,6 +257,7 @@
     })
     .catch(error => console.error('Error en la solicitud de tiempos restantes:', error));
 }
+
 
 
 
