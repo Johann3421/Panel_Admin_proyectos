@@ -57,13 +57,28 @@ return [
     |
     */
     'route' => [
-
-        'prefix' => env('ADMIN_ROUTE_PREFIX', 'admin'),
-
-        'namespace' => 'App\\Admin\\Controllers',
-
-        'middleware' => ['web', 'admin'],
+    'prefix' => 'admin',
+    'namespace' => 'App\\Admin\\Controllers',
+    'middleware' => ['web', 'admin'],
+],
+    'menu' => [
+    [
+        'title' => 'Dashboard',     // Este es el menú principal de Open-Admin
+        'icon' => 'fa-dashboard',
+        'uri'  => '/',
     ],
+    [
+        'title' => 'Visitas',       // Opción de menú para Visitas
+        'icon' => 'fa-users',
+        'uri'  => 'visitas',        // URI de la ruta, debería coincidir con la ruta 'admin/visitas'
+    ],
+    [
+        'title' => 'Recesos',       // Opción de menú para Recesos
+        'icon' => 'fa-clock-o',
+        'uri'  => 'recesos',        // URI de la ruta, debería coincidir con la ruta 'admin/recesos'
+    ],
+],
+
 
     /*
     |--------------------------------------------------------------------------

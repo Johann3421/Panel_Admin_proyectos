@@ -1,5 +1,6 @@
 <?php
 
+use App\Admin\Controllers\VisitasAdminController;
 use App\Http\Controllers\CronometroController;
 use App\Http\Controllers\DniController;
 use App\Http\Controllers\ExportarExcelController;
@@ -45,3 +46,5 @@ Route::post('/buscar-dni', [DniController::class, 'buscarDni'])->name('buscar.dn
 
 // Ruta de filtro de visitas (con middleware de autenticación)
 Route::middleware('auth:sanctum')->get('/filtro-visitas', [FiltroVisitaController::class, 'filtrar']);
+
+Route::get('/admin/visitas/estadisticas', [VisitasAdminController::class, 'estadisticas']);

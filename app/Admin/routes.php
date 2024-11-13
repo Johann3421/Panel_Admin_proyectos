@@ -6,12 +6,14 @@ use OpenAdmin\Admin\Facades\Admin;
 Admin::routes();
 
 Route::group([
-    'prefix'        => config('admin.route.prefix'),
-    'namespace'     => config('admin.route.namespace'),
-    'middleware'    => config('admin.route.middleware'),
-    'as'            => config('admin.route.prefix') . '.',
+    'prefix'        => config('admin.route.prefix'),       // Prefijo del grupo de rutas para admin
+    'namespace'     => config('admin.route.namespace'),    // Namespace para los controladores de admin
+    'middleware'    => config('admin.route.middleware'),   // Middleware del grupo
+    'as'            => config('admin.route.prefix') . '.', // Alias de las rutas
 ], function (Router $router) {
-
     $router->get('/', 'HomeController@index')->name('home');
 
+    // Rutas para los controladores de administración
+    $router->resource('visitas', 'VisitasAdminController');
+    $router->resource('recesos', 'RecesosAdminController');
 });
