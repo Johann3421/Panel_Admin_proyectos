@@ -4,50 +4,52 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Visita;
+use App\Models\VisitaField; // Importa el modelo de campos personalizados
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 
 class VisitaController extends Controller
 {
-    // Muestra la lista de visitas, aplicando filtros y paginación
     public function index(Request $request)
-    {
-        // Limite predeterminado de 10, o toma el valor especificado en el request
-        $limite = $request->input('limite', 10);
-        $busqueda = $request->input('busqueda');
-        $fecha = $request->input('fecha');
+{
+    // Configuración de los parámetros de búsqueda y filtros
+    $limite = $request->input('limite', 10);
+    $busqueda = $request->input('busqueda');
+    $fecha = $request->input('fecha');
 
-        // Crear la consulta base
-        $query = Visita::query();
+    // Consultas para las visitas
+    $query = Visita::query();
+    $query->whereNull('hora_salida')->orWhere('hora_salida', '');
 
-        // Filtrar visitas sin "hora_salida"
-        $query->whereNull('hora_salida')->orWhere('hora_salida', '');
-
-        // Filtrar por fecha, si se proporciona
-        if ($fecha) {
-            $query->whereDate('fecha', $fecha);
-        }
-
-        // Filtrar por búsqueda (nombre, DNI, motivo o lugar)
-        if ($busqueda) {
-            $query->where(function ($q) use ($busqueda) {
-                $q->where('nombre', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('dni', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('smotivo', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('lugar', 'LIKE', "%{$busqueda}%");
-            });
-        }
-
-        // Paginación de resultados con el límite especificado
-        $visitas = $query->paginate($limite)->appends([
-            'busqueda' => $busqueda,
-            'fecha' => $fecha,
-            'limite' => $limite
-        ]);
-
-        // Retornar la vista 'visitas' con las variables necesarias
-        return view('visitas', compact('visitas', 'busqueda', 'fecha', 'limite'));
+    if ($fecha) {
+        $query->whereDate('fecha', $fecha);
     }
+
+    if ($busqueda) {
+        $query->where(function ($q) use ($busqueda) {
+            $q->where('nombre', 'LIKE', "%{$busqueda}%")
+                ->orWhere('dni', 'LIKE', "%{$busqueda}%")
+                ->orWhere('smotivo', 'LIKE', "%{$busqueda}%")
+                ->orWhere('lugar', 'LIKE', "%{$busqueda}%");
+        });
+    }
+
+    // Paginación
+    $visitas = $query->paginate($limite)->appends([
+        'busqueda' => $busqueda,
+        'fecha' => $fecha,
+        'limite' => $limite
+    ]);
+
+    // Cargar los campos dinámicos desde la tabla visita_fields
+    $fields = VisitaField::all();
+    
+    // Depuración: verifica el contenido de los campos
+     // <- Añadir esta línea para ver los campos en el navegador
+
+    // Retorna la vista 'visitas' con las variables necesarias
+    return view('visitas', compact('visitas', 'busqueda', 'fecha', 'limite', 'fields'));
+}
 
     // Busca información de un DNI en una API externa
     public function buscarDNI(Request $request)

@@ -20,28 +20,29 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-lg-3 col-md-3 col-sm-12">
-                                <label for="dni">DNI:</label>
-                                <input type="text" maxlength="8" class="form-control form-control-sm" name="dni" id="dni" placeholder="Nro Documento"
-                                    onkeypress="return esNumerico(event)"
-                                    onkeydown="noSubmitEnter(event)" 
-                                onblur="buscarPorDNI()">
-                                <div id="dni_error" class="text-danger" style="font-size: 12px;"></div>
-                            </div>
-                            <div class="col-lg-9 col-md-9 col-sm-12">
-                                <label for="nombre">Nombres y Apellidos:</label>
-                                <input type="text" class="form-control form-control-sm" name="nombre" id="nombre" placeholder="Nombres y Apellidos">
-                                <div id="nombre_error" class="text-danger" style="font-size: 12px;"></div>
-                            </div>
-                            <div class="col-lg-12">
-                                <label for="tipopersona">Tipo:</label>
+                            @foreach ($fields as $field)
+                            @if (in_array($field->name, ['dni', 'nombre', 'tipopersona']))
+                            <div class="col-lg-{{ $field->name == 'dni' ? '3' : '9' }} col-md-6 mb-3">
+                                <label for="{{ $field->name }}">{{ $field->label }} @if($field->required) * @endif</label>
+
+                                @if ($field->type == 'text')
+                                <input type="text" name="{{ $field->name }}" id="{{ $field->name }}"
+                                    class="form-control form-control-sm"
+                                    placeholder="{{ $field->label }}"
+                                    {{ $field->name == 'dni' ? 'maxlength=8 onkeypress=esNumerico(event) onkeydown=noSubmitEnter(event) onblur=buscarPorDNI()' : '' }}>
+
+                                @elseif ($field->type == 'radio')
                                 <div class="form-group">
-                                    <label><input type="radio" id="personaNatural" name="tipopersona" value="Persona Natural"> Persona Natural</label>
-                                    <label><input type="radio" id="entidadPublica" name="tipopersona" value="Entidad Publica"> Entidad Publica</label>
-                                    <label><input type="radio" id="entidadPrivada" name="tipopersona" value="Entidad Privada"> Entidad Privada</label>
+                                    @foreach (json_decode($field->options, true) as $option)
+                                    <label><input type="radio" name="{{ $field->name }}" value="{{ $option }}"> {{ $option }}</label>
+                                    @endforeach
                                 </div>
-                                <div id="tipopersona_error" class="text-danger" style="font-size: 12px;"></div>
+                                @endif
+
+                                <div id="{{ $field->name }}_error" class="text-danger" style="font-size: 12px;"></div>
                             </div>
+                            @endif
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -54,33 +55,38 @@
                         <h3 class="card-title">Oficina a visitar</h3>
                     </div>
                     <div class="card-body">
+                        @foreach ($fields as $field)
+                        @if (in_array($field->name, ['nomoficina', 'smotivo', 'lugar']))
                         <div class="form-group">
-                            <label for="nomoficina">Oficina:</label>
-                            <select id="nomoficina" name="nomoficina" class="form-control form-control-sm" onchange="autocompletarLugar()">
-                                <option value="SELECCIONE" selected>&lt;&lt; SELECCIONE &gt;&gt;</option>
-                                <option value="ABASTECIMIENTO" data-lugar="ABASTECIMIENTO">ABASTECIMIENTO</option>
-                                <option value="ALMACEN" data-lugar="ALMACEN">ALMACEN</option>
-                                <option value="ARCHIVO" data-lugar="ARCHIVO">ARCHIVO</option>
-                                <!-- Agregar más opciones según sea necesario -->
+                            <label for="{{ $field->name }}">{{ $field->label }} @if($field->required) * @endif</label>
+
+                            @if ($field->type == 'select')
+                            <select id="{{ $field->name }}" name="{{ $field->name }}"
+                                class="form-control form-control-sm"
+                                onchange="{{ $field->name == 'nomoficina' ? 'autocompletarLugar()' : 'lugar' }}">
+                                @foreach (json_decode($field->options, true) as $option)
+                                <option value="{{ $option }}">{{ $option }}</option>
+                                @endforeach
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="smotivo">Motivo de visita:</label>
+
+                            @elseif ($field->type == 'text')
+                            <input type="text" class="form-control form-control-sm" id="{{ $field->name }}"
+                                name="{{ $field->name }}" placeholder="{{ $field->label }}">
+
+                            @elseif ($field->name == 'smotivo')
                             <div id="motivo-buttons" class="btn-group" role="group">
-                                <button type="button" class="btn btn-outline-primary" onclick="selectMotivo(this, 'Reunion de trabajo')">Reunión de trabajo</button>
-                                <button type="button" class="btn btn-outline-primary" onclick="selectMotivo(this, 'Provision de servicios')">Provisión de servicios</button>
-                                <button type="button" class="btn btn-outline-primary" onclick="selectMotivo(this, 'Gestion de intereses')">Gestión de intereses</button>
-                                <button type="button" class="btn btn-outline-primary" onclick="selectMotivo(this, 'Motivo personal')">Motivo personal</button>
-                                <button type="button" class="btn btn-outline-primary" onclick="selectMotivo(this, 'Tramite documentario')">Trámite documentario</button>
-                                <button type="button" class="btn btn-outline-primary" onclick="selectMotivo(this, 'Otros')">Otros</button>
+                                @foreach (json_decode($field->options, true) as $option)
+                                <button type="button" class="btn btn-outline-primary"
+                                    onclick="selectMotivo(this, '{{ $option }}')">{{ $option }}</button>
+                                @endforeach
                             </div>
-                            <input type="hidden" id="smotivo" name="smotivo">
-                            <div id="motivo_error" class="text-danger" style="font-size: 12px;"></div>
+                            <input type="hidden" id="{{ $field->name }}" name="{{ $field->name }}">
+                            @endif
+
+                            <div id="{{ $field->name }}_error" class="text-danger" style="font-size: 12px;"></div>
                         </div>
-                        <div class="form-group">
-                            <label for="lugar">Lugar:</label>
-                            <input type="text" class="form-control form-control-sm" id="lugar" name="lugar" placeholder="ID de la Oficina">
-                        </div>
+                        @endif
+                        @endforeach
                     </div>
                     <div class="card-footer">
                         <button type="submit" class="btn btn-primary float-right">
@@ -178,132 +184,141 @@
 
     <!-- Importar script.js usando Vite -->
     @vite('resources/js/script.js')
-    @endsection
-    <script>
-        // Buscar información de DNI con XMLHttpRequest
-        function buscarPorDNI() {
-            const dni = document.getElementById("dni").value;
+</div>
+@endsection
 
-            if (dni.length === 8) {
-                const xhr = new XMLHttpRequest();
-                xhr.open("POST", "/buscar-dni", true);
-                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-                xhr.setRequestHeader("X-CSRF-TOKEN", document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+<script>
+    // Buscar información de DNI con XMLHttpRequest
+    function buscarPorDNI() {
+        const dni = document.getElementById("dni").value;
 
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            document.getElementById("nombre").value = response.nombre;
-                            document.getElementById("dni_error").innerHTML = "";
-                        } else {
-                            document.getElementById("dni_error").innerHTML = response.error;
-                            document.getElementById("nombre").value = "";
-                        }
-                    } else if (xhr.readyState === 4) {
-                        document.getElementById("dni_error").innerHTML = "Error en la solicitud.";
+        if (dni.length === 8) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/buscar-dni", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.setRequestHeader("X-CSRF-TOKEN", document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        document.getElementById("nombre").value = response.nombre;
+                        document.getElementById("dni_error").innerHTML = "";
+                    } else {
+                        document.getElementById("dni_error").innerHTML = response.error;
+                        document.getElementById("nombre").value = "";
                     }
-                };
-
-                xhr.send("dni=" + dni);
-            }
-        }
-
-        // Validar el formulario antes de enviarlo
-        function validarFormulario() {
-            const dni = document.getElementById("ndocu").value;
-            const nombre = document.getElementById("nombre").value;
-
-            document.getElementById("dni_error").innerHTML = "";
-            document.getElementById("nombre_error").innerHTML = "";
-
-            if (dni === "" || dni.length !== 8) {
-                document.getElementById("dni_error").innerHTML = "El DNI debe tener 8 dígitos.";
-                return false;
-            }
-
-            if (nombre === "") {
-                document.getElementById("nombre_error").innerHTML = "El nombre es obligatorio.";
-                return false;
-            }
-
-            return true;
-        }
-
-        // Autocompletar el campo "Lugar" basado en la selección de la oficina
-        function autocompletarLugar() {
-            const select = document.getElementById("nomoficina");
-            const lugarInput = document.getElementById("lugar");
-            const lugar = select.options[select.selectedIndex].getAttribute("data-lugar");
-            lugarInput.value = lugar || '';
-        }
-
-        // Mantener el botón seleccionado para "Motivo de visita"
-        function selectMotivo(button, motivo) {
-            document.getElementById("smotivo").value = motivo;
-
-            const buttons = document.querySelectorAll("#motivo-buttons .btn");
-            buttons.forEach(btn => btn.classList.remove("active"));
-            button.classList.add("active");
-        }
-
-        // Registrar visita y actualizar la tabla sin recargar la página
-        async function registrarVisita(event) {
-            event.preventDefault();
-            const formData = new FormData(document.getElementById("frmvisita"));
-
-            try {
-                const response = await fetch("{{ route('visitas.store') }}", {
-                    method: "POST",
-                    headers: {
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const visita = await response.json();
-                    agregarVisitaATabla(visita);
-                    document.getElementById("frmvisita").reset();
-                } else {
-                    console.error("Error al registrar la visita:", response.statusText);
+                } else if (xhr.readyState === 4) {
+                    document.getElementById("dni_error").innerHTML = "Error en la solicitud.";
                 }
-            } catch (error) {
-                console.error("Error en la solicitud:", error);
-            }
+            };
+
+            xhr.send("dni=" + dni);
+        }
+    }
+
+    // Validar el formulario antes de enviarlo
+    function validarFormulario() {
+        const dni = document.getElementById("ndocu").value;
+        const nombre = document.getElementById("nombre").value;
+
+        document.getElementById("dni_error").innerHTML = "";
+        document.getElementById("nombre_error").innerHTML = "";
+
+        if (dni === "" || dni.length !== 8) {
+            document.getElementById("dni_error").innerHTML = "El DNI debe tener 8 dígitos.";
+            return false;
         }
 
-        // Registrar la salida sin recargar la página
-        async function registrarSalida(id) {
-            try {
-                const response = await fetch(`/visitas/${id}/salida`, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                });
+        if (nombre === "") {
+            document.getElementById("nombre_error").innerHTML = "El nombre es obligatorio.";
+            return false;
+        }
 
-                if (response.ok) {
-                    const visita = await response.json();
-                    const fila = document.getElementById(`fila_${id}`);
-                    fila.querySelector("td:nth-child(8)").textContent = visita.hora_salida || 'N/A';
-                    // Oculta la fila para simular eliminación visual
-                    fila.style.display = 'none';
-                } else {
-                    console.error("Error al registrar la salida:", response.statusText);
+        return true;
+    }
+
+    // Autocompletar el campo "Lugar" basado en la selección de "nomoficina"
+function autocompletarLugar() {
+    const selectOficina = document.getElementById("nomoficina");
+    const inputLugar = document.getElementById("lugar");
+
+    // Si no existen los elementos, terminar la ejecución
+    if (!selectOficina || !inputLugar) return;
+
+    // Asignar el mismo valor de oficina al campo "Lugar"
+    const oficinaSeleccionada = selectOficina.value;
+    inputLugar.value = oficinaSeleccionada !== "SELECCIONE" ? oficinaSeleccionada : '';
+}
+
+
+
+    // Mantener el botón seleccionado para "Motivo de visita"
+    function selectMotivo(button, motivo) {
+        document.getElementById("smotivo").value = motivo;
+
+        const buttons = document.querySelectorAll("#motivo-buttons .btn");
+        buttons.forEach(btn => btn.classList.remove("active"));
+        button.classList.add("active");
+    }
+
+    // Registrar visita y actualizar la tabla sin recargar la página
+    async function registrarVisita(event) {
+        event.preventDefault();
+        const formData = new FormData(document.getElementById("frmvisita"));
+
+        try {
+            const response = await fetch("{{ route('visitas.store') }}", {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const visita = await response.json();
+                agregarVisitaATabla(visita);
+                document.getElementById("frmvisita").reset();
+            } else {
+                console.error("Error al registrar la visita:", response.statusText);
+            }
+        } catch (error) {
+            console.error("Error en la solicitud:", error);
+        }
+    }
+
+    // Registrar la salida sin recargar la página
+    async function registrarSalida(id) {
+        try {
+            const response = await fetch(`/visitas/${id}/salida`, {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 }
-            } catch (error) {
-                console.error("Error en la solicitud:", error);
+            });
+
+            if (response.ok) {
+                const visita = await response.json();
+                const fila = document.getElementById(`fila_${id}`);
+                fila.querySelector("td:nth-child(8)").textContent = visita.hora_salida || 'N/A';
+                // Oculta la fila para simular eliminación visual
+                fila.style.display = 'none';
+            } else {
+                console.error("Error al registrar la salida:", response.statusText);
             }
+        } catch (error) {
+            console.error("Error en la solicitud:", error);
         }
+    }
 
-        // Agregar una visita a la tabla
-        function agregarVisitaATabla(visita) {
-            const tbody = document.getElementById("tbody-visitas");
-            const row = document.createElement("tr");
-            row.setAttribute("id", `fila_${visita.id}`);
+    // Agregar una visita a la tabla
+    function agregarVisitaATabla(visita) {
+        const tbody = document.getElementById("tbody-visitas");
+        const row = document.createElement("tr");
+        row.setAttribute("id", `fila_${visita.id}`);
 
-            row.innerHTML = `
+        row.innerHTML = `
             <td><button class="btn btn-primary" onclick="registrarSalida(${visita.id})"><i class="material-icons">exit_to_app</i></button></td>
             <td>${visita.id}</td>
             <td>${visita.fecha}</td>
@@ -321,35 +336,36 @@
 </td>
         `;
 
-            tbody.prepend(row);
-        }
-        function noSubmitEnter(event) {
+        tbody.prepend(row);
+    }
+
+    function noSubmitEnter(event) {
         if (event.key === "Enter") {
             event.preventDefault(); // Evita el envío del formulario
             return false;
         }
         return true;
     }
-    </script>
+</script>
 
-    <script type="text/javascript">
-        function imprimirTicket(id) {
-            // Crear un iframe oculto para cargar el PDF sin abrir una pestaña visible
-            let iframe = document.getElementById('ticketIframe');
+<script type="text/javascript">
+    function imprimirTicket(id) {
+        // Crear un iframe oculto para cargar el PDF sin abrir una pestaña visible
+        let iframe = document.getElementById('ticketIframe');
 
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.id = 'ticketIframe';
-                iframe.style.display = 'none'; // Oculta el iframe
-                document.body.appendChild(iframe);
-            }
-
-            // Cargar el PDF en el iframe
-            iframe.src = `/visitas/${id}/imprimir-ticket`;
-
-            // Abrir el cuadro de impresión después de cargar el PDF
-            iframe.onload = function() {
-                iframe.contentWindow.print();
-            };
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'ticketIframe';
+            iframe.style.display = 'none'; // Oculta el iframe
+            document.body.appendChild(iframe);
         }
-    </script>
+
+        // Cargar el PDF en el iframe
+        iframe.src = `/visitas/${id}/imprimir-ticket`;
+
+        // Abrir el cuadro de impresión después de cargar el PDF
+        iframe.onload = function() {
+            iframe.contentWindow.print();
+        };
+    }
+</script>

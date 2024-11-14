@@ -1,5 +1,6 @@
 <?php
 
+use App\Admin\Controllers\ModificadorVisitasController;
 use Illuminate\Routing\Router;
 use OpenAdmin\Admin\Facades\Admin;
 
@@ -16,4 +17,5 @@ Route::group([
     // Rutas para los controladores de administración
     $router->resource('visitas', 'VisitasAdminController');
     $router->resource('recesos', 'RecesosAdminController');
+    $router->resource('modificador-visitas', ModificadorVisitasController::class);
 });
