@@ -20,17 +20,29 @@
 
             <div id="main-worker" class="worker-box">
                 <h4 id="worker-name-display">Nombre del Trabajador</h4>
+
+                @foreach ($fields as $field)
                 <div class="search-worker mb-3">
-                    <label for="dniWorker" class="form-label">DNI:</label>
-                    <input type="text" id="dniWorker" class="form-control" placeholder="Ingrese el DNI" maxlength="8" readonly>
-                </div>
-                <div class="mb-3">
-                    <label for="recesoDuration" class="form-label">Duración del Receso:</label>
-                    <select id="recesoDuration" class="form-select">
-                        <option value="15">15 minutos</option>
-                        <option value="1">1 minuto</option>
+                    <label for="{{ $field->name }}" class="form-label">{{ $field->label }}</label>
+
+                    @if ($field->type == 'text')
+                    <input type="text" id="{{ $field->name }}" name="{{ $field->name }}" class="form-control" placeholder="{{ $field->label }}" {{ $field->name == 'dniWorker' ? 'maxlength=8 readonly' : '' }}>
+                    @elseif ($field->type == 'select')
+                    <select id="{{ $field->name }}" name="{{ $field->name }}" class="form-select">
+                        @foreach (json_decode($field->options, true) as $option)
+                        <option value="{{ $option }}">{{ $option }}</option>
+                        @endforeach
                     </select>
+                    @elseif ($field->type == 'radio')
+                    @foreach (json_decode($field->options, true) as $option)
+                    <label><input type="radio" name="{{ $field->name }}" value="{{ $option }}"> {{ $option }}</label>
+                    @endforeach
+                    @endif
+
+                    <div id="{{ $field->name }}_error" class="text-danger" style="font-size: 12px;"></div>
                 </div>
+                @endforeach
+
                 <div class="btn-group">
                     <button class="btn btn-success" onclick="registrarReceso()">Generar Ticket</button>
                 </div>
@@ -89,10 +101,9 @@
             </tbody>
         </table>
     </div>
-
-
 </section>
 @endsection
+
 
 <script>
     let recesosActivos = {};
@@ -100,7 +111,7 @@
 
     function registrarReceso() {
         const id = document.getElementById('worker-id').value;
-        const nombre = document.getElementById('worker-name').value;
+        const nombre = document.getElementById('worker_name').value;
         const dni = document.getElementById('dniWorker').value;
         const duracion = parseInt(document.getElementById('recesoDuration').value, 10); // Duración en minutos
 
@@ -155,31 +166,31 @@
     }
 
     function iniciarContador(id, tiempoRestante, enTiempoExtra = false) {
-    const contadorElemento = document.getElementById(`contador-${id}`);
-    if (!contadorElemento) return;
+        const contadorElemento = document.getElementById(`contador-${id}`);
+        if (!contadorElemento) return;
 
-    clearInterval(recesosActivos[id]); // Reinicia el intervalo si ya existe
+        clearInterval(recesosActivos[id]); // Reinicia el intervalo si ya existe
 
-    // Usar un intervalo que actualice el contador cada segundo en tiempo real
-    recesosActivos[id] = setInterval(() => {
-        if (tiempoRestante > 0) {
-            const minutos = Math.floor(tiempoRestante / 60);
-            const segundos = tiempoRestante % 60;
-            contadorElemento.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-            tiempoRestante--;
-        } else {
-            if (!enTiempoExtra) {
-                contadorElemento.classList.replace('contador-verde', 'contador-rojo');
-                enTiempoExtra = true;
+        // Usar un intervalo que actualice el contador cada segundo en tiempo real
+        recesosActivos[id] = setInterval(() => {
+            if (tiempoRestante > 0) {
+                const minutos = Math.floor(tiempoRestante / 60);
+                const segundos = tiempoRestante % 60;
+                contadorElemento.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+                tiempoRestante--;
+            } else {
+                if (!enTiempoExtra) {
+                    contadorElemento.classList.replace('contador-verde', 'contador-rojo');
+                    enTiempoExtra = true;
+                }
+                // Mostrar tiempo extra en formato negativo MM:SS
+                const minutos = Math.floor(Math.abs(tiempoRestante) / 60);
+                const segundos = Math.abs(tiempoRestante) % 60;
+                contadorElemento.textContent = `-${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+                tiempoRestante--; // Continuar en tiempo extra
             }
-            // Mostrar tiempo extra en formato negativo MM:SS
-            const minutos = Math.floor(Math.abs(tiempoRestante) / 60);
-            const segundos = Math.abs(tiempoRestante) % 60;
-            contadorElemento.textContent = `-${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-            tiempoRestante--; // Continuar en tiempo extra
-        }
-    }, 1000); // Actualización en tiempo real cada segundo
-}
+        }, 1000); // Actualización en tiempo real cada segundo
+    }
 
 
     function finalizarReceso(id) {
@@ -220,43 +231,43 @@
     }
 
     function iniciarContadores() {
-    fetch(tiemposRestantesUrl, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            data.trabajadores.forEach(trabajador => {
-                const id = trabajador.id;
-                const duracionTotalMinutos = trabajador.duracionRestante; // Obtener la duración personalizada del backend
-
-                // Obtener o establecer el tiempo de inicio en `localStorage`
-                let startTime = localStorage.getItem(`inicioReceso_${id}`);
-                if (!startTime) {
-                    startTime = Date.now();
-                    localStorage.setItem(`inicioReceso_${id}`, startTime);
-                    localStorage.setItem(`duracionTotalMinutos_${id}`, duracionTotalMinutos);
-                } else {
-                    startTime = parseInt(startTime, 10);
+        fetch(tiemposRestantesUrl, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    data.trabajadores.forEach(trabajador => {
+                        const id = trabajador.id;
+                        const duracionTotalMinutos = trabajador.duracionRestante; // Obtener la duración personalizada del backend
 
-                // Calcular el tiempo transcurrido en segundos desde el inicio
-                const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-                const duracionTotalSegundos = duracionTotalMinutos * 60;
-                let tiempoRestante = duracionTotalSegundos - elapsedSeconds;
+                        // Obtener o establecer el tiempo de inicio en `localStorage`
+                        let startTime = localStorage.getItem(`inicioReceso_${id}`);
+                        if (!startTime) {
+                            startTime = Date.now();
+                            localStorage.setItem(`inicioReceso_${id}`, startTime);
+                            localStorage.setItem(`duracionTotalMinutos_${id}`, duracionTotalMinutos);
+                        } else {
+                            startTime = parseInt(startTime, 10);
+                        }
 
-                // Iniciar el contador en tiempo real con actualización cada segundo
-                iniciarContador(id, tiempoRestante);
-            });
-        } else {
-            console.error("Error al obtener los tiempos restantes:", data.message);
-        }
-    })
-    .catch(error => console.error('Error en la solicitud de tiempos restantes:', error));
-}
+                        // Calcular el tiempo transcurrido en segundos desde el inicio
+                        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                        const duracionTotalSegundos = duracionTotalMinutos * 60;
+                        let tiempoRestante = duracionTotalSegundos - elapsedSeconds;
+
+                        // Iniciar el contador en tiempo real con actualización cada segundo
+                        iniciarContador(id, tiempoRestante);
+                    });
+                } else {
+                    console.error("Error al obtener los tiempos restantes:", data.message);
+                }
+            })
+            .catch(error => console.error('Error en la solicitud de tiempos restantes:', error));
+    }
 
 
 
@@ -326,13 +337,15 @@
     }
 
     function seleccionarTrabajador(id, nombre, dni) {
-        document.getElementById('worker-id').value = id;
-        document.getElementById('worker-name').value = nombre;
-        document.getElementById('dniWorker').value = dni;
-        document.getElementById('worker-name-display').textContent = nombre;
-        document.getElementById('searchWorker').value = nombre;
-        document.getElementById('searchResult').innerHTML = ''; // Limpiar resultados de búsqueda
-    }
+    document.getElementById('worker-id').value = id;
+    document.getElementById('worker_name').value = nombre; // Campo oculto que guarda el nombre del trabajador
+    document.getElementById('dniWorker').value = dni;
+    
+    // Autocompleta el campo de visualización de nombre del trabajador
+    document.getElementById('worker-name-display').textContent = nombre;
+    document.getElementById('searchWorker').value = nombre; // Autocompleta el campo de búsqueda con el nombre del trabajador
+    document.getElementById('searchResult').innerHTML = ''; // Limpiar resultados de búsqueda
+}
 
     function actualizarRelojDigital() {
         const reloj = document.querySelector('.digital-clock .time');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RecesoField;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,10 @@ class CronometroController extends Controller
             ->whereNull('hora_vuelta')
             ->get();
 
-        return view('cronometro', compact('trabajadores'));
+        // Agregamos la carga de los campos RecesoField desde la base de datos
+        $fields = RecesoField::all();
+
+        return view('cronometro', compact('trabajadores', 'fields'));
     }
 
     public function registrarReceso(Request $request)
@@ -106,13 +110,6 @@ public function finalizarReceso(Request $request)
             $duracionRestante = 0;
             $exceso = (int) round($horaVuelta->diffInMinutes($horaLimiteReceso));
         }
-
-        // Log de valores calculados
-        \Log::info('Duración Programada:', ['duracion' => $duracionProgramada]);
-        \Log::info('Duración Restante Calculada:', ['duracionRestante' => $duracionRestante]);
-        \Log::info('Exceso Calculado:', ['exceso' => $exceso]);
-        
-
         // Actualizar receso en la base de datos
         DB::table('recesos')
             ->where('trabajador_id', $workerId)
@@ -159,17 +156,6 @@ public function tiemposRestantes()
             $exceso = $finReceso->lessThan($ahora)
                 ? $ahora->diffInMinutes($finReceso)
                 : 0;
-
-            // Log para verificación
-            \Log::info('Cálculo Final sin Decimales', [
-                'trabajador_id' => $trabajador->id,
-                'hora_receso' => $horaReceso->format('H:i'),
-                'duracion' => $trabajador->duracion,
-                'hora_actual' => $ahora->format('H:i'),
-                'fin_receso' => $finReceso->format('H:i'),
-                'duracionRestante' => $duracionRestante,
-                'exceso' => $exceso
-            ]);
 
             // Asignación final
             $trabajador->duracionRestante = $duracionRestante;

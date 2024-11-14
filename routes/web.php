@@ -1,5 +1,6 @@
 <?php
 
+use App\Admin\Controllers\ModificadorRecesosController;
 use App\Admin\Controllers\VisitasAdminController;
 use App\Http\Controllers\CronometroController;
 use App\Http\Controllers\DniController;
@@ -48,3 +49,4 @@ Route::post('/buscar-dni', [DniController::class, 'buscarDni'])->name('buscar.dn
 Route::middleware('auth:sanctum')->get('/filtro-visitas', [FiltroVisitaController::class, 'filtrar']);
 
 Route::get('/admin/visitas/estadisticas', [VisitasAdminController::class, 'estadisticas']);
+Route::resource('receso_fields', ModificadorRecesosController::class);
