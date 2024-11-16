@@ -3,16 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Trabajador;
+use App\Models\Visita;
+use App\Models\Receso;
 use BotMan\BotMan\BotMan;
 use BotMan\BotMan\BotManFactory;
 use BotMan\BotMan\Drivers\DriverManager;
 use BotMan\BotMan\Messages\Outgoing\Actions\Button;
 use BotMan\BotMan\Messages\Outgoing\Question;
 use Illuminate\Http\Request;
-use App\Models\Visita;
 use Carbon\Carbon;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
+use Illuminate\Support\Facades\DB;
 
 class ChatbotController extends Controller
 {
@@ -28,26 +28,24 @@ class ChatbotController extends Controller
                 ->addButtons([
                     Button::create('Registrar visita')->value('registrar_visita'),
                     Button::create('Listar visitas activas')->value('listar_visitas'),
-                    Button::create('Registrar Receso')->value('registrar_receso'),
+                    Button::create('Registrar receso')->value('registrar_receso'),
                     Button::create('Listar recesos activos')->value('listar_recesos'),
                 ]);
 
             $bot->reply($question);
         });
 
-        // Registrar visita
-        $botman->hears('registrar_visita', function (BotMan $bot) {
+        // Registrar visita - Ampliar escucha con frases comunes
+        $botman->hears('quiero registrar una visita|registrar visita|nueva visita', function (BotMan $bot) {
             $bot->reply("Por favor, proporciona los datos de la visita separados por comas:\n`DNI, Nombre, Tipo de Persona, Lugar, Motivo`");
         });
 
-        // Patrón genérico para registrar visita
         $botman->hears('{dni},{nombre},{tipopersona},{lugar},{smotivo}', function (BotMan $bot, $dni, $nombre, $tipopersona, $lugar, $smotivo) {
             if (empty($dni) || empty($nombre) || empty($tipopersona) || empty($lugar) || empty($smotivo)) {
                 $bot->reply("❌ Datos incompletos. Asegúrate de enviar los datos en el formato correcto: `DNI, Nombre, Tipo de Persona, Lugar, Motivo`.");
                 return;
             }
-
-            // Crea el registro en la base de datos
+        
             $visita = Visita::create([
                 'dni' => $dni,
                 'nombre' => $nombre,
@@ -57,12 +55,11 @@ class ChatbotController extends Controller
                 'hora_ingreso' => Carbon::now('America/Lima'),
                 'fecha' => Carbon::now('America/Lima')->format('Y-m-d'),
             ]);
-
+        
             $bot->reply("✅ Visita registrada correctamente para *{$nombre}*.");
         });
 
-        // Listar visitas activas
-        $botman->hears('listar_visitas', function (BotMan $bot) {
+        $botman->hears('listar visitas|visitas activas', function (BotMan $bot) {
             $visitas = Visita::whereNull('hora_salida')->get();
 
             if ($visitas->isEmpty()) {
@@ -76,86 +73,107 @@ class ChatbotController extends Controller
             }
         });
 
-        $botman->hears('registrar_receso', function (BotMan $bot) {
-            $bot->reply("Por favor, proporciona los datos de la visita separados por comas:\n`id, nombre, dni, hora_receso, duracion`");
+        // Registrar receso - Ampliar escucha con frases comunes
+        $botman->hears('quiero registrar un receso|registrar receso|nuevo receso', function (BotMan $bot) {
+            $bot->reply("Proporciona los datos del receso separados por comas:\n`ID Trabajador, Duración (en minutos)`");
         });
 
-        // Patrón genérico para registrar visita
-        $botman->hears('{id},{nombre},{dni},{hora_receso},{duracion}', function (BotMan $bot, $id, $nombre, $dni, $hora_receso, $duracion) {
-            if (empty($id) || empty($nombre) || empty($dni) || empty($hora_receso) || empty($duracion)) {    
-                $bot->reply("❌ Datos incompletos. Asegúrate de enviar los datos en el formato correcto: `id, nombre, dni, hora_receso, duracion`.");
+        $botman->hears('{workerId},{duracion}', function (BotMan $bot, $workerId, $duracion) {
+            $horaReceso = Carbon::now('America/Lima');
+        
+            $recesoActivo = DB::table('recesos')
+                ->where('trabajador_id', $workerId)
+                ->where('estado', 'activo')
+                ->first();
+        
+            if ($recesoActivo) {
+                $bot->reply("⚠️ Ya hay un receso activo para este trabajador.");
                 return;
             }
-
-            // Crea el registro en la base de datos
-            $trabajador = Trabajador::create([
-                'nombre' => $nombre,
-                'dni' => $dni,
-                'hora_receso' => $hora_receso,
+        
+            $trabajador = DB::table('trabajadores')
+                ->select('nombre', 'dni')
+                ->where('id', $workerId)
+                ->first();
+        
+            if (!$trabajador) {
+                $bot->reply("❌ Trabajador no encontrado con ID: {$workerId}.");
+                return;
+            }
+        
+            DB::table('trabajadores')->where('id', $workerId)->update([
+                'hora_receso' => $horaReceso,
                 'duracion' => $duracion,
+                'hora_vuelta' => null
             ]);
 
-            $bot->reply("✅ Receso registrado correctamente para *{$nombre}*.");
+            DB::table('recesos')->insert([
+                'trabajador_id' => $workerId,
+                'nombre' => $trabajador->nombre,
+                'dni' => $trabajador->dni,
+                'duracion' => $duracion,
+                'hora_receso' => $horaReceso,
+                'estado' => 'activo'
+            ]);
+        
+            $bot->reply("✅ Receso registrado para *{$trabajador->nombre}* con duración de {$duracion} minutos.");
         });
-        // Listar recesos activos
-        $botman->hears('listar_recesos', function (BotMan $bot) {
-            $trabajadores = Trabajador::whereNull('hora_vuelta')->get();
 
-            if ($trabajadores->isEmpty()) {
+        $botman->hears('listar recesos|recesos activos', function (BotMan $bot) {
+            $recesosActivos = DB::table('recesos')
+                ->where('estado', 'activo')
+                ->get();
+
+            if ($recesosActivos->isEmpty()) {
                 $bot->reply("⚠️ No hay recesos activos en este momento.");
             } else {
                 $respuesta = "📋 Recesos activos:\n";
-                foreach ($trabajadores as $trabajador) {
-                    $respuesta .= "- *{$trabajador->nombre}* (DNI: {$trabajador->dni}) ingresó a las {$trabajador->hora_receso}\n";
+                foreach ($recesosActivos as $receso) {
+                    $respuesta .= "- *{$receso->nombre}* (DNI: {$receso->dni}), comenzó a las {$receso->hora_receso}, duración: {$receso->duracion} minutos.\n";
                 }
                 $bot->reply($respuesta);
             }
         });
 
-        // Fallback para preguntas fuera de contexto usando Gemini
-        $botman->hears('{message}', function (BotMan $bot, $message) {
-            $keywords = ['hola', 'registrar_visita', 'listar_visitas','registrar_receso', 'listar_recesos'];
-            if (in_array(strtolower($message), $keywords)) {
-                return; // No procesar, ya lo maneja un comando específico
-            }
-        
-            $contexto = "Soy tu asistente virtual para el sistema de Registro de Visitas. Mis funciones incluyen: registrar visitas, listar visitas activas y registrar salidas.";
-            $apiKey = 'AIzaSyDBwnLWYTmYQczbpck3CipgNWObRoIS5Y8'; // Reemplaza con tu API key válida
-            $client = new Client();
-        
-            try {
-                $response = $client->post('https://aistudio.google.com/app/prompts/1omOZO_967sxlfxgQhN6dPbuKV5VRzirp', [
-                    'headers' => ['Content-Type' => 'application/json', 'Authorization' => "Bearer $apiKey"],
-                    'json' => [
-                        'prompt' => [
-                            'context' => $contexto,
-                            'messages' => [
-                                ['content' => $message],
-                            ],
-                        ],
-                        'temperature' => 0.7,
-                        'top_k' => 40,
-                        'top_p' => 0.9
-                    ]
-                ]);
-        
-                $data = json_decode($response->getBody()->getContents(), true);
-        
-                if (isset($data['candidates'][0]['content'])) {
-                    $respuesta = $data['candidates'][0]['content'];
-                    $bot->reply("🤖 {$respuesta}");
+        // Finalizar receso - Ampliar escucha
+        $botman->hears('finalizar receso|terminar receso {workerId}', function (BotMan $bot, $workerId) {
+            $horaVuelta = Carbon::now('America/Lima');
+
+            $receso = DB::table('recesos')
+                ->where('trabajador_id', $workerId)
+                ->where('estado', 'activo')
+                ->first();
+
+            if ($receso) {
+                $horaReceso = Carbon::parse($receso->hora_receso, 'America/Lima');
+                $duracionProgramada = (int)$receso->duracion;
+                $horaLimiteReceso = $horaReceso->copy()->addMinutes($duracionProgramada);
+
+                if ($horaVuelta->lessThanOrEqualTo($horaLimiteReceso)) {
+                    $exceso = 0;
                 } else {
-                    $bot->reply("🤖 Lo siento, no pude generar una respuesta adecuada. Por favor, intenta nuevamente.");
+                    $exceso = $horaVuelta->diffInMinutes($horaLimiteReceso);
                 }
-            } catch (RequestException $e) {
-                $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : 'sin código';
-                $errorBody = $e->getResponse() ? $e->getResponse()->getBody()->getContents() : 'sin detalles';
-                $bot->reply("🤖 Error al conectar con la IA: {$statusCode}. Detalles: {$errorBody}");
-            } catch (\Exception $e) {
-                $bot->reply("🤖 Hubo un problema: " . $e->getMessage());
+
+                DB::table('recesos')->where('trabajador_id', $workerId)
+                    ->where('estado', 'activo')
+                    ->update([
+                        'hora_vuelta' => $horaVuelta,
+                        'estado' => 'finalizado'
+                    ]);
+
+                DB::table('trabajadores')->where('id', $workerId)->update(['hora_vuelta' => $horaVuelta]);
+
+                $bot->reply("✅ Receso finalizado para *{$receso->nombre}*. Hora de regreso: {$horaVuelta->format('H:i:s')}. Exceso: {$exceso} minutos.");
+            } else {
+                $bot->reply("⚠️ No hay un receso activo para este trabajador.");
             }
         });
-        
+
+        // Fallback
+        $botman->fallback(function (BotMan $bot) {
+            $bot->reply("🤖 Lo siento, no entendí eso. Por favor, intenta con algo como:\n- 'Registrar visita'\n- 'Listar visitas activas'\n- 'Registrar receso'\n- 'Listar recesos activos'.");
+        });
 
         $botman->listen();
     }
