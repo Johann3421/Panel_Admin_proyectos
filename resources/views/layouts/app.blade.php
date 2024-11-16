@@ -44,10 +44,40 @@
                 </section>
             </div>
         </div>
+        <!-- Botón flotante en la esquina -->
+<div id="chat-button" style="position: fixed; bottom: 20px; right: 20px; cursor: pointer;">
+    <button onclick="toggleChat()">Chat</button>
+</div>
+
+<!-- Contenedor del chat -->
+<div id="chat-widget" style="display: none; position: fixed; bottom: 60px; right: 20px; width: 300px; height: 400px; border: 1px solid #ccc; background: white;">
+    <iframe src="/botman/tinker" style="width: 100%; height: 100%; border: none;"></iframe>
+</div>
+
     </div>
 
     <!-- Bootstrap JS desde CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function toggleChat() {
+        var chatWidget = document.getElementById('chat-widget');
+        chatWidget.style.display = chatWidget.style.display === 'none' ? 'block' : 'none';
+    }
+</script>
+<script>
+    var botmanWidget = {
+        title: "Asistente Virtual",
+        mainColor: "#4e8cff",
+        bubbleBackground: "#007bff",
+        headerTextColor: "#fff",
+        introMessage: "👋 ¡Hola! Soy tu asistente para el sistema de Registro de Visitas. ¿En qué puedo ayudarte?",
+        placeholderText: "Escribe un mensaje...",
+        aboutText: "",
+        chatServer: "/botman" // Ruta hacia el controlador de tu chatbot
+    };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/botman-web-widget@0/build/js/widget.js"></script>
+
 </body>
 
 </html>

@@ -173,6 +173,9 @@
                         @endforelse
                     </tbody>
                 </table>
+                <div id="chat-widget" style="display: none; position: fixed; bottom: 60px; right: 20px; width: 300px; height: 400px; border: 1px solid #ccc; background: white;">
+                    <iframe src="/botman/tinker" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
             </div>
 
             <!-- Paginación -->
@@ -239,17 +242,17 @@
     }
 
     // Autocompletar el campo "Lugar" basado en la selección de "nomoficina"
-function autocompletarLugar() {
-    const selectOficina = document.getElementById("nomoficina");
-    const inputLugar = document.getElementById("lugar");
+    function autocompletarLugar() {
+        const selectOficina = document.getElementById("nomoficina");
+        const inputLugar = document.getElementById("lugar");
 
-    // Si no existen los elementos, terminar la ejecución
-    if (!selectOficina || !inputLugar) return;
+        // Si no existen los elementos, terminar la ejecución
+        if (!selectOficina || !inputLugar) return;
 
-    // Asignar el mismo valor de oficina al campo "Lugar"
-    const oficinaSeleccionada = selectOficina.value;
-    inputLugar.value = oficinaSeleccionada !== "SELECCIONE" ? oficinaSeleccionada : '';
-}
+        // Asignar el mismo valor de oficina al campo "Lugar"
+        const oficinaSeleccionada = selectOficina.value;
+        inputLugar.value = oficinaSeleccionada !== "SELECCIONE" ? oficinaSeleccionada : '';
+    }
 
 
 
@@ -345,6 +348,10 @@ function autocompletarLugar() {
             return false;
         }
         return true;
+    }
+    function toggleChat() {
+        var chatWidget = document.getElementById('chat-widget');
+        chatWidget.style.display = chatWidget.style.display === 'none' ? 'block' : 'none';
     }
 </script>
 

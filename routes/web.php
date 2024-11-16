@@ -2,6 +2,7 @@
 
 use App\Admin\Controllers\ModificadorRecesosController;
 use App\Admin\Controllers\VisitasAdminController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CronometroController;
 use App\Http\Controllers\DniController;
 use App\Http\Controllers\ExportarExcelController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\UserAuthController;
 use App\Http\Controllers\VisitaController;
 use Illuminate\Support\Facades\Route;
+
 
 // Redirige la raíz a la página de login
 Route::get('/', function () {
@@ -50,3 +52,5 @@ Route::middleware('auth:sanctum')->get('/filtro-visitas', [FiltroVisitaControlle
 
 Route::get('/admin/visitas/estadisticas', [VisitasAdminController::class, 'estadisticas']);
 Route::resource('receso_fields', ModificadorRecesosController::class);
+
+Route::match(['get', 'post'], '/botman', [ChatbotController::class, 'handle']);

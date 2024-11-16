@@ -10,8 +10,13 @@ class Visita extends Model
     use HasFactory;
 
     protected $fillable = [
-        'dni', 'nombre', 'tipopersona', 'fecha', 'hora_ingreso', 'hora_salida', 'smotivo', 'lugar'
+        'dni',
+        'nombre',
+        'tipopersona',
+        'lugar',
+        'smotivo',
+        'hora_ingreso',
+        'hora_salida',
+        'fecha',
     ];
-
-    public $timestamps = false; // Desactiva los timestamps automáticos si no están en la tabla
 }
