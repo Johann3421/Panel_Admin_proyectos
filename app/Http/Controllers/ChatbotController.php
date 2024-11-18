@@ -35,8 +35,8 @@ class ChatbotController extends Controller
             $bot->reply($question);
         });
 
-        // Registrar visita - Ampliar escucha con frases comunes
-        $botman->hears('quiero registrar una visita|registrar visita|nueva visita', function (BotMan $bot) {
+        // Registrar visita
+        $botman->hears('registrar_visita|quiero registrar una visita|registrar visita|nueva visita', function (BotMan $bot) {
             $bot->reply("Por favor, proporciona los datos de la visita separados por comas:\n`DNI, Nombre, Tipo de Persona, Lugar, Motivo`");
         });
 
@@ -45,7 +45,7 @@ class ChatbotController extends Controller
                 $bot->reply("❌ Datos incompletos. Asegúrate de enviar los datos en el formato correcto: `DNI, Nombre, Tipo de Persona, Lugar, Motivo`.");
                 return;
             }
-        
+
             $visita = Visita::create([
                 'dni' => $dni,
                 'nombre' => $nombre,
@@ -55,11 +55,11 @@ class ChatbotController extends Controller
                 'hora_ingreso' => Carbon::now('America/Lima'),
                 'fecha' => Carbon::now('America/Lima')->format('Y-m-d'),
             ]);
-        
+
             $bot->reply("✅ Visita registrada correctamente para *{$nombre}*.");
         });
 
-        $botman->hears('listar visitas|visitas activas', function (BotMan $bot) {
+        $botman->hears('listar_visitas|listar visitas|visitas activas', function (BotMan $bot) {
             $visitas = Visita::whereNull('hora_salida')->get();
 
             if ($visitas->isEmpty()) {
@@ -73,34 +73,34 @@ class ChatbotController extends Controller
             }
         });
 
-        // Registrar receso - Ampliar escucha con frases comunes
-        $botman->hears('quiero registrar un receso|registrar receso|nuevo receso', function (BotMan $bot) {
+        // Registrar receso
+        $botman->hears('registrar_receso|quiero registrar un receso|registrar receso|nuevo receso', function (BotMan $bot) {
             $bot->reply("Proporciona los datos del receso separados por comas:\n`ID Trabajador, Duración (en minutos)`");
         });
 
         $botman->hears('{workerId},{duracion}', function (BotMan $bot, $workerId, $duracion) {
             $horaReceso = Carbon::now('America/Lima');
-        
+
             $recesoActivo = DB::table('recesos')
                 ->where('trabajador_id', $workerId)
                 ->where('estado', 'activo')
                 ->first();
-        
+
             if ($recesoActivo) {
                 $bot->reply("⚠️ Ya hay un receso activo para este trabajador.");
                 return;
             }
-        
+
             $trabajador = DB::table('trabajadores')
                 ->select('nombre', 'dni')
                 ->where('id', $workerId)
                 ->first();
-        
+
             if (!$trabajador) {
                 $bot->reply("❌ Trabajador no encontrado con ID: {$workerId}.");
                 return;
             }
-        
+
             DB::table('trabajadores')->where('id', $workerId)->update([
                 'hora_receso' => $horaReceso,
                 'duracion' => $duracion,
@@ -115,11 +115,11 @@ class ChatbotController extends Controller
                 'hora_receso' => $horaReceso,
                 'estado' => 'activo'
             ]);
-        
+
             $bot->reply("✅ Receso registrado para *{$trabajador->nombre}* con duración de {$duracion} minutos.");
         });
 
-        $botman->hears('listar recesos|recesos activos', function (BotMan $bot) {
+        $botman->hears('listar_recesos|listar recesos|recesos activos', function (BotMan $bot) {
             $recesosActivos = DB::table('recesos')
                 ->where('estado', 'activo')
                 ->get();
@@ -135,41 +135,6 @@ class ChatbotController extends Controller
             }
         });
 
-        // Finalizar receso - Ampliar escucha
-        $botman->hears('finalizar receso|terminar receso {workerId}', function (BotMan $bot, $workerId) {
-            $horaVuelta = Carbon::now('America/Lima');
-
-            $receso = DB::table('recesos')
-                ->where('trabajador_id', $workerId)
-                ->where('estado', 'activo')
-                ->first();
-
-            if ($receso) {
-                $horaReceso = Carbon::parse($receso->hora_receso, 'America/Lima');
-                $duracionProgramada = (int)$receso->duracion;
-                $horaLimiteReceso = $horaReceso->copy()->addMinutes($duracionProgramada);
-
-                if ($horaVuelta->lessThanOrEqualTo($horaLimiteReceso)) {
-                    $exceso = 0;
-                } else {
-                    $exceso = $horaVuelta->diffInMinutes($horaLimiteReceso);
-                }
-
-                DB::table('recesos')->where('trabajador_id', $workerId)
-                    ->where('estado', 'activo')
-                    ->update([
-                        'hora_vuelta' => $horaVuelta,
-                        'estado' => 'finalizado'
-                    ]);
-
-                DB::table('trabajadores')->where('id', $workerId)->update(['hora_vuelta' => $horaVuelta]);
-
-                $bot->reply("✅ Receso finalizado para *{$receso->nombre}*. Hora de regreso: {$horaVuelta->format('H:i:s')}. Exceso: {$exceso} minutos.");
-            } else {
-                $bot->reply("⚠️ No hay un receso activo para este trabajador.");
-            }
-        });
-
         // Fallback
         $botman->fallback(function (BotMan $bot) {
             $bot->reply("🤖 Lo siento, no entendí eso. Por favor, intenta con algo como:\n- 'Registrar visita'\n- 'Listar visitas activas'\n- 'Registrar receso'\n- 'Listar recesos activos'.");
@@ -177,4 +142,5 @@ class ChatbotController extends Controller
 
         $botman->listen();
     }
+    
 }

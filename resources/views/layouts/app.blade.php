@@ -45,9 +45,7 @@
             </div>
         </div>
         <!-- Botón flotante en la esquina -->
-<div id="chat-button" style="position: fixed; bottom: 20px; right: 20px; cursor: pointer;">
-    <button onclick="toggleChat()">Chat</button>
-</div>
+
 
 <!-- Contenedor del chat -->
 <div id="chat-widget" style="display: none; position: fixed; bottom: 60px; right: 20px; width: 300px; height: 400px; border: 1px solid #ccc; background: white;">
