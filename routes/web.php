@@ -2,6 +2,7 @@
 
 use App\Admin\Controllers\ModificadorRecesosController;
 use App\Admin\Controllers\VisitasAdminController;
+use App\Http\Controllers\BotController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CronometroController;
 use App\Http\Controllers\DniController;
@@ -54,3 +55,7 @@ Route::get('/admin/visitas/estadisticas', [VisitasAdminController::class, 'estad
 Route::resource('receso_fields', ModificadorRecesosController::class);
 
 Route::match(['get', 'post'], '/botman', [ChatbotController::class, 'handle']);
+
+Route::post('/bot/audio', [BotController::class, 'handleAudio'])->name('bot.audio');
+Route::post('/chatbot/message', [ChatbotController::class, 'handleMessage'])->name('chatbot.message');
+Route::post('/chatbot/audio', [ChatbotController::class, 'handleAudio'])->name('chatbot.audio');

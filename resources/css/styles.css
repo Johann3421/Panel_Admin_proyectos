@@ -112,3 +112,214 @@
     padding: 15px;
     background-color: #f4f6f9;
 }
+
+/* Estilos generales del overlay */
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Oscurecimiento */
+    z-index: 999;
+    display: none; /* Oculto por defecto */
+    animation: fade-in 0.3s ease-in-out;
+}
+
+/* Animación para el overlay */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Cuadro del chatbot */
+#chat-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    width: 450px;
+    height: 550px;
+    background: linear-gradient(145deg, #ffffff, #f2f2f2);
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    display: none; /* Oculto por defecto */
+    flex-direction: column;
+    z-index: 1000;
+    animation: slide-and-scale 0.4s ease-out forwards;
+    overflow: hidden;
+}
+
+/* Animación suave de aparición */
+@keyframes slide-and-scale {
+    from {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Botón del chatbot */
+#bot-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(145deg, #007bff, #0056b3);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s;
+}
+
+#bot-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Cabecera del chatbot */
+#chat-header {
+    background: linear-gradient(145deg, #007bff, #0056b3);
+    color: white;
+    padding: 15px;
+    font-size: 20px;
+    text-align: center;
+    font-weight: bold;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+
+/* Contenido del chatbot */
+#chat-content {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background: #f7f9fc; /* Fondo suave */
+}
+
+/* Estilo de los mensajes */
+.message {
+    margin-bottom: 10px;
+    display: flex;
+}
+
+.message.user {
+    justify-content: flex-end;
+}
+
+.message.bot {
+    justify-content: flex-start;
+}
+
+.message .bubble {
+    padding: 12px;
+    border-radius: 20px;
+    max-width: 75%;
+    font-size: 15px;
+    line-height: 1.4;
+    position: relative;
+}
+
+
+.message.user .bubble {
+    background: linear-gradient(145deg, #007bff, #0056b3);
+    color: white;
+    text-align: right;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.message.bot .bubble {
+    background: linear-gradient(145deg, #e0f7fa, #b2ebf2);
+    color: #333;
+    text-align: left;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+.loading-dots {
+    display: inline-block;
+    width: 40px;
+    text-align: center;
+}
+.loading-dots span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin: 0 2px;
+    background-color: #007bff;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.loading-dots span:nth-child(3) {
+    animation-delay: 0;
+}
+
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+    }
+    40% {
+        transform: scale(1);
+    }
+}
+/* Footer del chatbot */
+#chat-footer {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #f0f4f8; /* Fondo claro */
+    border-top: 1px solid #ddd;
+    gap: 10px;
+}
+
+#chat-footer input {
+    flex: 1;
+    padding: 12px;
+    border-radius: 25px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    background: #ffffff;
+    transition: border 0.3s ease;
+}
+
+#chat-footer input:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+#chat-footer button {
+    background: linear-gradient(145deg, #007bff, #0056b3);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+    font-size: 18px;
+}
+
+#chat-footer button:hover {
+    background: linear-gradient(145deg, #0056b3, #003f7f);
+}
