@@ -69,21 +69,44 @@ class VisitaController extends Controller
 
     // Registra una nueva visita y redirige a la lista de visitas
     public function store(Request $request)
-    {
-        $request->validate([
-            'dni' => 'required|max:8',
-            'nombre' => 'required|string|max:255',
-            'tipopersona' => 'required',
-            'lugar' => 'required',
-            'smotivo' => 'required',
-        ]);
+{
+    // Recuperar los campos dinámicos
+    $fields = VisitaField::all();
 
-        Visita::create(array_merge($request->all(), [
-            'hora_ingreso' => Carbon::now('America/Lima'), // Asigna hora de ingreso en zona horaria de Perú
-        ]));
+    // Construir reglas de validación dinámicamente
+    $rules = [];
+    foreach ($fields as $field) {
+        $rule = [];
+        if ($field->required) {
+            $rule[] = 'required';
+        }
 
-        return redirect()->route('visitas.index')->with('success', 'Visita registrada correctamente');
+        if ($field->type === 'text') {
+            $rule[] = 'string';
+            $rule[] = 'max:255';
+        }
+
+        if ($field->type === 'select' || $field->type === 'radio') {
+            $options = json_decode($field->options, true);
+            if (is_array($options)) {
+                $rule[] = 'in:' . implode(',', $options);
+            }
+        }
+
+        $rules[$field->name] = implode('|', $rule);
     }
+
+    // Validar la solicitud
+    $validated = $request->validate($rules);
+
+    // Crear una nueva visita con los datos validados
+    Visita::create(array_merge($validated, [
+        'hora_ingreso' => Carbon::now('America/Lima'),
+    ]));
+
+    return redirect()->route('visitas.index')->with('success', 'Visita registrada correctamente');
+}
+
 
     public function registrarSalida($id)
     {

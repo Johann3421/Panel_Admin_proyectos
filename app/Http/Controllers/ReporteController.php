@@ -36,7 +36,6 @@ class ReporteController extends Controller
 
     return view('reporte', compact('visitas', 'busqueda', 'fechaDesde', 'fechaHasta'));
 }
-
     public function export(Request $request)
     {
         $busqueda = $request->input('busqueda', '');
