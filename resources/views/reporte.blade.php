@@ -11,6 +11,9 @@
         <a href="{{ route('reporte.export', ['busqueda' => request('busqueda'), 'fecha' => request('fecha')]) }}" class="btn btn-success">
             Exportar a Excel
         </a>
+        <a href="{{ route('reporte.vaciar') }}" class="btn btn-danger">Vaciar</a>
+<a href="{{ route('reporte.restaurar') }}" class="btn btn-warning">Restaurar</a>
+
     </div>
 
     <!-- Formulario de búsqueda y filtrado -->

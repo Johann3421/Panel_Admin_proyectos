@@ -11,16 +11,15 @@ class RecesoController extends Controller
 {
     public function index(Request $request)
 {
-    // Obtener filtros de búsqueda y fechas
     $busqueda = $request->input('busqueda');
     $desde = $request->input('desde');
     $hasta = $request->input('hasta');
 
-    // Consultar la tabla recesos con filtros, incluyendo el campo 'exceso'
+    // Consultar la tabla recesos con filtros, incluyendo solo los recesos activos
     $query = DB::table('recesos')->select(
         'id', 'trabajador_id', 'nombre', 'dni', 'hora_receso', 
         'hora_vuelta', 'duracion', 'estado', 'exceso'
-    );
+    )->where('activo', true); // Filtrar solo los registros activos
 
     if ($busqueda) {
         $query->where(function ($q) use ($busqueda) {
@@ -43,7 +42,6 @@ class RecesoController extends Controller
 }
 
 
-
     public function export(Request $request)
 {
     // Proporcionar valores predeterminados para evitar el error de clave indefinida
@@ -55,5 +53,20 @@ class RecesoController extends Controller
 
     return Excel::download(new RecesosExport($filters), 'recesos.xlsx');
 }
+
+public function vaciarFrontend()
+{
+    DB::table('recesos')->where('activo', true)->update(['activo' => false]);
+
+    return redirect()->route('recesos.index')->with('success', 'El frontend ha sido vaciado correctamente.');
+}
+
+public function restaurarFrontend()
+{
+    DB::table('recesos')->where('activo', false)->update(['activo' => true]);
+
+    return redirect()->route('recesos.index')->with('success', 'Los recesos han sido restaurados correctamente.');
+}
+
 
 }

@@ -30,6 +30,9 @@ Route::post('/visitas/{id}/salida', [VisitaController::class, 'registrarSalida']
 // Rutas de reporte
 Route::get('/reporte', [ReporteController::class, 'index'])->name('reporte.index');
 Route::get('/reporte/export', [ReporteController::class, 'export'])->name('reporte.export');
+Route::get('/reporte/vaciar', [ReporteController::class, 'vaciarFrontend'])->name('reporte.vaciar');
+Route::get('/reporte/restaurar', [ReporteController::class, 'restaurarFrontend'])->name('reporte.restaurar');
+
 
 // Rutas de cronómetro
 Route::get('/cronometro', [CronometroController::class, 'index'])->name('cronometro.index');
@@ -41,6 +44,8 @@ Route::get('/cronometro/buscar-trabajador', [CronometroController::class, 'busca
 // Rutas de recesos
 Route::get('/recesos', [App\Http\Controllers\RecesoController::class, 'index'])->name('recesos.index');
 Route::get('/recesos/export', [App\Http\Controllers\RecesoController::class, 'export'])->name('recesos.export');
+Route::get('/recesos/vaciar', [App\Http\Controllers\RecesoController::class, 'vaciarFrontend'])->name('recesos.vaciar');
+Route::get('/recesos/restaurar', [App\Http\Controllers\RecesoController::class, 'restaurarFrontend'])->name('recesos.restaurar');
 
 // Ruta de ticket de visita
 Route::get('/visitas/{id}/imprimir-ticket', [ExportarExcelController::class, 'imprimirTicket'])->name('visitas.imprimirTicket');

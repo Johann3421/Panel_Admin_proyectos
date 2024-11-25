@@ -11,7 +11,14 @@
         <a href="{{ route('recesos.export', ['busqueda' => request('busqueda'), 'desde' => request('desde'), 'hasta' => request('hasta')]) }}" class="btn btn-success">
             Exportar a Excel
         </a>
+        <a href="{{ route('recesos.vaciar') }}" class="btn btn-danger">
+            Vaciar
+        </a>
+        <a href="{{ route('recesos.restaurar') }}" class="btn btn-warning">
+            Restaurar
+        </a>
     </div>
+    
 
     <!-- Formulario de búsqueda y filtrado -->
     <div class="card mb-4">
