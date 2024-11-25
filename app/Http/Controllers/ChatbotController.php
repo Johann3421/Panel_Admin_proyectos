@@ -8,7 +8,9 @@ use App\Models\Receso;
 use App\Models\Trabajador;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use GuzzleHttp\Client;
 
 class ChatbotController extends Controller
 {
@@ -22,10 +24,45 @@ class ChatbotController extends Controller
         // Corregir errores ortográficos en las palabras clave principales
         $normalizedMessage = $this->normalizeMessage($message);
 
+        $intent = $this->getIntent($message);
+
+        switch ($intent) {
+            case 'registrar visita':
+                session(['registro_visita' => []]);
+                return response()->json([
+                    'response' => "Iniciando registro de visita. ¿Cuál es el DNI del trabajador?"
+                ]);
+            case 'listar visitas':
+                return $this->listarVisitas();
+            case 'registrar receso':
+                return response()->json([
+                    'response' => "¿Cuál es el ID del trabajador?"
+                ]);
+            case 'listar recesos':
+                return $this->listarRecesos();
+            default:
+                return response()->json([
+                    'response' => "🤖 No entendí eso. Intenta con:\n- 'Registrar visita'\n- 'Listar visitas activas'\n- 'Registrar receso'\n- 'Listar recesos activos'."
+                ]);
+        }
+
+        if (session()->has('registro_visita')) {
+            return $this->handleRegistroVisita($normalizedMessage);
+        }
+
+        if (session()->has('listar_visitas')) {
+            return $this->listarVisitas($normalizedMessage);
+        }
+
         switch (true) {
             case Str::contains($normalizedMessage, ['hola', 'buenos días', 'buenas tardes', 'saludos']):
                 return response()->json([
                     'response' => "👋 ¡Hola! Soy tu asistente para el sistema de Registro de Visitas. Puedes pedirme:\n- 'Registrar visita'\n- 'Listar visitas activas'\n- 'Registrar receso'\n- 'Listar recesos activos'."
+                ]);
+            case Str::contains($normalizedMessage, ['registrar visita']):
+                session(['registro_visita' => []]);
+                return response()->json([
+                    'response' => "Vamos a registrar una visita. Por favor responde las siguientes preguntas paso a paso:\n1️⃣ ¿Cuál es el DNI del trabajador?"
                 ]);
 
             case Str::contains($normalizedMessage, ['registrar receso']):
@@ -33,12 +70,12 @@ class ChatbotController extends Controller
                     'response' => "Vamos a registrar un receso. Por favor responde las siguientes preguntas paso a paso:\n1️⃣ ¿Cuál es el ID del trabajador?"
                 ]);
 
-            // Captura del ID del trabajador
+                // Captura del ID del trabajador
             case session()->missing('registro_receso.worker_id') && preg_match('/^\d+$/', $message):
                 session(['registro_receso.worker_id' => $message]);
                 return response()->json(['response' => "ID de trabajador registrado. Ahora, ¿cuántos minutos durará el receso?"]);
 
-            // Captura de la duración del receso
+                // Captura de la duración del receso
             case session()->has('registro_receso.worker_id') && preg_match('/^\d+$/', $message):
                 $workerId = session('registro_receso.worker_id');
                 $duracion = $message;
@@ -57,6 +94,93 @@ class ChatbotController extends Controller
                     'response' => "🤖 Lo siento, no entendí eso. Por favor, intenta con algo como:\n- 'Registrar visita'\n- 'Listar visitas activas'\n- 'Registrar receso'\n- 'Listar recesos activos'."
                 ]);
         }
+    }
+
+    private function getIntent(string $message): string
+    {
+        $client = new Client();
+        try {
+            $response = $client->post('https://api-inference.huggingface.co/models/facebook/bart-large-mnli', [
+                'headers' => [
+                    'Authorization' => 'Bearer TU_API_KEY'
+                ],
+                'json' => [
+                    'inputs' => $message,
+                    'parameters' => ['candidate_labels' => ['registrar visita', 'listar visitas', 'registrar receso', 'listar recesos']],
+                ],
+            ]);
+
+            $result = json_decode($response->getBody(), true);
+            return $result['labels'][0] ?? 'unknown'; // Retornar la intención más probable o 'unknown'
+        } catch (\Exception $e) {
+            // Manejar errores de la API
+            \Log::error("Error en Hugging Face API: " . $e->getMessage());
+            return 'unknown';
+        }
+    }
+
+    private function handleRegistroVisita(string $message)
+    {
+        $data = session('registro_visita');
+
+        if (!isset($data['dni']) && preg_match('/^\d{8}$/', $message)) {
+            $data['dni'] = $message;
+            session(['registro_visita' => $data]);
+            return response()->json(['response' => "👍 Gracias. Ahora, ¿cuál es el nombre del trabajador?"]);
+        }
+
+        if (!isset($data['nombre']) && strlen($message) > 2) {
+            $data['nombre'] = $message;
+            session(['registro_visita' => $data]);
+            return response()->json(['response' => "👍 Gracias. Ahora, ¿cuál es el tipo de persona (por ejemplo, 'empleado' o 'externo')?"]);
+        }
+
+        if (!isset($data['tipo_persona']) && strlen($message) > 2) {
+            $data['tipo_persona'] = $message;
+            session(['registro_visita' => $data]);
+            return response()->json(['response' => "👍 Gracias. Ahora, ¿cuál es el lugar de trabajo?"]);
+        }
+
+        if (!isset($data['lugar']) && strlen($message) > 2) {
+            $data['lugar'] = $message;
+            session(['registro_visita' => $data]);
+            return response()->json(['response' => "👍 Gracias. Por último, ¿cuál es el motivo de la visita?"]);
+        }
+
+        if (!isset($data['motivo']) && strlen($message) > 2) {
+            $data['motivo'] = $message;
+
+            // Aquí puedes guardar en la base de datos si es necesario
+            Visita::create($data);
+
+            session()->forget('registro_visita');
+            return response()->json(['response' => "✅ Visita registrada correctamente."]);
+        }
+
+        return response()->json(['response' => "⚠️ Por favor, responde a la pregunta actual."]);
+    }
+
+    private function listarVisitas()
+    {
+        // Obtener todas las visitas activas (que no tienen hora de salida)
+        $visitasActivas = DB::table('visitas')
+            ->whereNull('hora_salida')
+            ->get();
+
+        if ($visitasActivas->isEmpty()) {
+            return response()->json([
+                'response' => "⚠️ No hay visitas activas en este momento."
+            ]);
+        }
+
+        $respuesta = "📋 Visitas activas:\n";
+        foreach ($visitasActivas as $visita) {
+            $respuesta .= "- *{$visita->nombre}* (DNI: {$visita->dni}), motivo: {$visita->motivo}, entrada: {$visita->hora_entrada}.\n";
+        }
+
+        return response()->json([
+            'response' => $respuesta
+        ]);
     }
 
     /**

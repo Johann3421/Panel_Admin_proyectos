@@ -52,6 +52,9 @@ Route::post('/buscar-dni', [DniController::class, 'buscarDni'])->name('buscar.dn
 Route::middleware('auth:sanctum')->get('/filtro-visitas', [FiltroVisitaController::class, 'filtrar']);
 
 Route::get('/admin/visitas/estadisticas', [VisitasAdminController::class, 'estadisticas']);
+Route::get('/visitas/create', [VisitaController::class, 'create'])->name('visitas.create');
+Route::post('/visitas/store', [VisitaController::class, 'store'])->name('visitas.store');
+Route::get('/reporte/vaciar', [ReporteController::class, 'vaciarFrontend'])->name('reporte.vaciar');
 Route::resource('receso_fields', ModificadorRecesosController::class);
 
 Route::match(['get', 'post'], '/botman', [ChatbotController::class, 'handle']);

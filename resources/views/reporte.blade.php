@@ -6,10 +6,13 @@
 <div class="container-fluid my-4">
     <h1>Reporte de Salidas</h1>
 
-    <!-- Botón para exportar a Excel -->
+    <!-- Botones de exportar y vaciar -->
     <div class="mb-3">
         <a href="{{ route('reporte.export', ['busqueda' => request('busqueda'), 'fecha' => request('fecha')]) }}" class="btn btn-success">
             Exportar a Excel
+        </a>
+        <a href="{{ route('reporte.vaciar') }}" class="btn btn-danger">
+            Vaciar
         </a>
     </div>
 
@@ -77,6 +80,7 @@
     </div>
 
     <!-- Paginación Simple sin Íconos -->
+    @if ($visitas instanceof \Illuminate\Pagination\Paginator || $visitas instanceof \Illuminate\Pagination\LengthAwarePaginator)
     <div class="d-flex justify-content-center">
         <div class="pagination">
             @if ($visitas->onFirstPage())
@@ -94,6 +98,7 @@
             @endif
         </div>
     </div>
+@endif
 </div>
 
 <!-- Script para limpiar los filtros después de enviar el formulario -->
