@@ -9,14 +9,6 @@ class Visita extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'dni',
-        'nombre',
-        'tipopersona',
-        'lugar',
-        'smotivo',
-        'hora_ingreso',
-        'hora_salida',
-        'fecha',
-    ];
+    protected $fillable = ['nombre', 'fecha', 'dni', 'hora_ingreso', 'hora_salida', 'smotivo', 'tipopersona', 'lugar', 'nuevo_campo'];
+
 }

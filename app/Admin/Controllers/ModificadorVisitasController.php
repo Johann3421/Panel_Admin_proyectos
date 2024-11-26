@@ -109,4 +109,5 @@ class ModificadorVisitasController extends AdminController
         VisitaField::destroy($id);
         return response()->json(['status' => 'success', 'message' => 'Campo eliminado correctamente']);
     }
+    
 }

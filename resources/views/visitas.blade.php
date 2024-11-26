@@ -8,73 +8,30 @@
 
     <!-- Formulario de Registro de Visita -->
     <form id="frmvisita" method="POST" action="{{ route('visitas.store') }}" onsubmit="return validarFormulario();">
-        @csrf
-        <div class="row">
-            <!-- Datos de visitante -->
-            <div class="col-sm-6">
-                <div class="card card-primary">
-                    <div class="card-header">
-                        <h3 class="card-title">Datos de visitante</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            @foreach ($fields as $field)
-                                @if (in_array($field->name, ['dni', 'nombre', 'tipopersona']))
-                                    <div class="col-lg-{{ $field->name == 'dni' ? '3' : '9' }} col-md-6 mb-3">
-                                        <label for="{{ $field->name }}">{{ $field->label }} @if($field->required) * @endif</label>
-    
-                                        @if ($field->type == 'text')
-                                            <input type="text" 
-                                                   name="{{ $field->name }}" 
-                                                   id="{{ $field->name }}" 
-                                                   class="form-control form-control-sm" 
-                                                   placeholder="{{ $field->label }}" 
-                                                   {{ $field->name == 'nombre' ? 'readonly' : '' }}
-                                                   {{ $field->name == 'dni' ? 'maxlength=8 onkeypress=esNumerico(event) onkeydown=noSubmitEnter(event) onblur=buscarPorDNI()' : '' }}>
-                                        @elseif ($field->type == 'radio')
-                                            <div class="form-group">
-                                                @foreach (json_decode($field->options, true) as $option)
-                                                    <label class="d-inline-block mr-3">
-                                                        <input type="radio" 
-                                                               name="{{ $field->name }}" 
-                                                               value="{{ $option }}" 
-                                                               class="mr-1"> {{ $option }}
-                                                    </label>
-                                                @endforeach
-                                            </div>
-                                        @endif
-    
-                                        <div id="{{ $field->name }}_error" class="text-danger" style="font-size: 12px;"></div>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    </div>
+    @csrf
+    <div class="row">
+        <!-- Datos de visitante -->
+        <div class="col-sm-6">
+            <div class="card card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">Datos de visitante</h3>
                 </div>
-            </div>
-    
-            <!-- Oficina a visitar -->
-            <div class="col-sm-6">
-                <div class="card card-secondary">
-                    <div class="card-header">
-                        <h3 class="card-title">Oficina a visitar</h3>
-                    </div>
-                    <div class="card-body">
+                <div class="card-body">
+                    <div class="row">
                         @foreach ($fields as $field)
-                            @if (in_array($field->name, ['nomoficina', 'smotivo', 'lugar']))
-                                <div class="form-group">
+                            @if (in_array($field->name, ['dni', 'nombre', 'tipopersona']))
+                                <div class="col-lg-{{ $field->name == 'dni' ? '3' : '9' }} col-md-6 mb-3">
                                     <label for="{{ $field->name }}">{{ $field->label }} @if($field->required) * @endif</label>
     
-                                    @if ($field->type == 'select')
-                                        <select id="{{ $field->name }}" 
-                                                name="{{ $field->name }}" 
-                                                class="form-control form-control-sm"
-                                                {{ $field->name == 'nomoficina' ? 'onchange=autocompletarLugar()' : '' }}>
-                                            @foreach (json_decode($field->options, true) as $option)
-                                                <option value="{{ $option }}">{{ $option }}</option>
-                                            @endforeach
-                                        </select>
-                                    @elseif ($field->name == 'smotivo')
+                                    @if ($field->type == 'text')
+                                        <input type="text" 
+                                               name="{{ $field->name }}" 
+                                               id="{{ $field->name }}" 
+                                               class="form-control form-control-sm" 
+                                               placeholder="{{ $field->label }}" 
+                                               {{ $field->name == 'nombre' ? 'readonly' : '' }}
+                                               {{ $field->name == 'dni' ? 'maxlength=8 onkeypress=esNumerico(event) onkeydown=noSubmitEnter(event) onblur=buscarPorDNI()' : '' }}>
+                                    @elseif ($field->type == 'radio')
                                         <div class="form-group">
                                             @foreach (json_decode($field->options, true) as $option)
                                                 <label class="d-inline-block mr-3">
@@ -85,15 +42,87 @@
                                                 </label>
                                             @endforeach
                                         </div>
-                                    @elseif ($field->type == 'text')
-                                        <input type="text" 
-                                               class="form-control form-control-sm" 
-                                               id="{{ $field->name }}" 
-                                               name="{{ $field->name }}" 
-                                               placeholder="{{ $field->label }}">
                                     @endif
     
                                     <div id="{{ $field->name }}_error" class="text-danger" style="font-size: 12px;"></div>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Oficina a visitar -->
+        <div class="col-sm-6">
+            <div class="card card-secondary">
+                <div class="card-header">
+                    <h3 class="card-title">Oficina a visitar</h3>
+                </div>
+                <div class="card-body">
+                    @foreach ($fields as $field)
+                        @if (in_array($field->name, ['nomoficina', 'smotivo', 'lugar']))
+                            <div class="form-group">
+                                <label for="{{ $field->name }}">{{ $field->label }} @if($field->required) * @endif</label>
+    
+                                @if ($field->type == 'select')
+                                    <select id="{{ $field->name }}" 
+                                            name="{{ $field->name }}" 
+                                            class="form-control form-control-sm"
+                                            {{ $field->name == 'nomoficina' ? 'onchange=autocompletarLugar()' : '' }}>
+                                        @foreach (json_decode($field->options, true) as $option)
+                                            <option value="{{ $option }}">{{ $option }}</option>
+                                        @endforeach
+                                    </select>
+                                @elseif ($field->type == 'radio')
+                                    <div class="form-group">
+                                        @foreach (json_decode($field->options, true) as $option)
+                                            <label class="d-inline-block mr-3">
+                                                <input type="radio" 
+                                                       name="{{ $field->name }}" 
+                                                       value="{{ $option }}" 
+                                                       class="mr-1"> {{ $option }}
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                @elseif ($field->type == 'text')
+                                    <input type="text" 
+                                           class="form-control form-control-sm" 
+                                           id="{{ $field->name }}" 
+                                           name="{{ $field->name }}" 
+                                           placeholder="{{ $field->label }}">
+                                @endif
+    
+                                <div id="{{ $field->name }}_error" class="text-danger" style="font-size: 12px;"></div>
+                            </div>
+                        @endif
+                    @endforeach
+
+                    <!-- Campos adicionales (debajo del segundo div) -->
+                    <div id="campos-dinamicos">
+                        @foreach ($fields as $field)
+                            @if (!in_array($field->name, ['dni', 'nombre', 'tipopersona', 'nomoficina', 'smotivo', 'lugar']))
+                                <div class="form-group">
+                                    <label for="{{ $field->name }}">{{ $field->label }} @if($field->required) * @endif</label>
+                                    @if ($field->type == 'text')
+                                        <input type="text" class="form-control" id="{{ $field->name }}" name="{{ $field->name }}">
+                                    @elseif ($field->type == 'select')
+                                        <select id="{{ $field->name }}" name="{{ $field->name }}" class="form-control">
+                                            @foreach (json_decode($field->options, true) as $option)
+                                                <option value="{{ $option }}">{{ $option }}</option>
+                                            @endforeach
+                                        </select>
+                                    @elseif ($field->type == 'radio')
+                                        <div>
+                                            @foreach (json_decode($field->options, true) as $option)
+                                                <label>
+                                                    <input type="radio" name="{{ $field->name }}" value="{{ $option }}">
+                                                    {{ $option }}
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                    <div id="{{ $field->name }}_error" class="text-danger"></div>
                                 </div>
                             @endif
                         @endforeach
@@ -106,7 +135,8 @@
                 </div>
             </div>
         </div>
-    </form>
+    </div>
+</form>
     
 
     <!-- Lista de Visitas con Buscador -->
