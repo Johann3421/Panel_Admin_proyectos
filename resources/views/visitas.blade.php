@@ -214,9 +214,6 @@
                         @endforelse
                     </tbody>
                 </table>
-                <div id="chat-widget" style="display: none; position: fixed; bottom: 60px; right: 20px; width: 300px; height: 400px; border: 1px solid #ccc; background: white;">
-                    <iframe src="/botman/tinker" style="width: 100%; height: 100%; border: none;"></iframe>
-                </div>
             </div>
 
             <!-- Paginación -->

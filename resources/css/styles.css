@@ -119,7 +119,6 @@
     color: var(--text-light);
     font-size: 1.2rem;
 }
-
 .main-sidebar .nav-link {
     display: flex;
     align-items: center;
@@ -129,9 +128,6 @@
     font-size: 1rem;
     transition: background-color 0.3s ease, color 0.3s ease; /* Transición suave */
 }
-
-
-
 .main-sidebar .nav-link i.material-icons {
     margin-right: 15px;
     font-size: 1.5rem;
@@ -476,7 +472,6 @@
     transition: background-color 0.3s ease-in-out;
     font-size: 18px;
 }
-
 #chat-footer button:hover {
     background: linear-gradient(145deg, #0056b3, #003f7f);
 }
