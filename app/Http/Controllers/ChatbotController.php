@@ -24,9 +24,9 @@ class ChatbotController extends Controller
     // Normalizar mensaje para evitar errores ortográficos
     $normalizedMessage = $this->normalizeMessage($message);
 
-    // Determinar intención, pero no sobrescribir si está en un flujo activo
+    // Determinar intención usando el clasificador, pero no sobrescribir si está en un flujo activo
     if (!session()->has('registro_visita') && !session()->has('registro_receso')) {
-        $intent = $this->getIntent($normalizedMessage);
+        $intent = $this->classifyIntent($normalizedMessage);
     } else {
         $intent = null;
     }
@@ -37,7 +37,7 @@ class ChatbotController extends Controller
                 'response' => "👋 ¡Hola! Soy tu asistente para el sistema de Registro de Visitas. Puedes pedirme:\n- 'Registrar visita'\n- 'Listar visitas activas'\n- 'Registrar receso'\n- 'Listar recesos activos'."
             ]);
 
-        case $intent === 'registrar visita':
+        case $intent === 'registrar_visita':
             session(['registro_visita' => []]); // Inicializa el flujo de registro
             return response()->json([
                 'response' => "Vamos a registrar una visita. Por favor responde las siguientes preguntas paso a paso:\n1️⃣ ¿Cuál es el DNI del trabajador?"
@@ -46,7 +46,7 @@ class ChatbotController extends Controller
         case session()->has('registro_visita'): // Manejo del flujo activo de registro de visita
             return $this->handleRegistroVisita($normalizedMessage);
 
-        case $intent === 'registrar receso':
+        case $intent === 'registrar_receso':
             session(['registro_receso' => []]);
             return response()->json([
                 'response' => "Vamos a registrar un receso. Por favor responde las siguientes preguntas paso a paso:\n1️⃣ ¿Cuál es el ID del trabajador?"
@@ -58,15 +58,18 @@ class ChatbotController extends Controller
 
         case session()->has('registro_receso.worker_id') && preg_match('/^\d+$/', $message):
             $workerId = session('registro_receso.worker_id');
-            $duracion = $message;
+            $duracion = (int)$message;
 
-            session()->forget('registro_receso'); // Limpiar sesión para evitar conflictos
-            return $this->registrarReceso($workerId, $duracion);
+            // Registrar receso y limpiar sesión
+            $response = $this->registrarReceso($workerId, $duracion);
+            session()->forget('registro_receso');
 
-        case $intent === 'listar visitas':
+            return $response;
+
+        case $intent === 'listar_visitas':
             return $this->listarVisitas();
 
-        case $intent === 'listar recesos':
+        case $intent === 'listar_recesos':
             return $this->listarRecesos();
 
         default:
@@ -75,6 +78,38 @@ class ChatbotController extends Controller
             ]);
     }
 }
+
+
+public function classifyIntent($message)
+    {
+        $model = config('chatbot_model'); // Cargar el modelo desde config
+
+        $tokens = array_filter(preg_split('/\W+/', strtolower($message))); // Tokenizar
+        $vocab = $model['vocab'];
+        $wordCounts = $model['wordCounts'];
+        $intentCounts = $model['intentCounts'];
+
+        $totalIntents = array_sum($intentCounts);
+        $bestIntent = null;
+        $bestScore = -INF;
+
+        foreach ($intentCounts as $intent => $count) {
+            $score = log($count / $totalIntents); // Prior
+
+            foreach ($tokens as $token) {
+                $wordFrequency = $wordCounts[$intent][$token] ?? 0.01; // Suavizado
+                $score += log($wordFrequency / count($vocab));
+            }
+
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestIntent = $intent;
+            }
+        }
+
+        return $bestIntent;
+    }
+
 
     private function getIntent(string $message): string
 {

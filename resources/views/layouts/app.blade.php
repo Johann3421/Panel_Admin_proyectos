@@ -42,25 +42,30 @@
     </div>
 
     <!-- Botón del chatbot -->
-    <button id="bot-button">🤖</button>
+<button id="bot-button">
+    <img src="{{ Vite::asset('resources/images/chatbot2.png') }}" alt="Bot Icon" style="width: 64px; height: 64px;">
+</button>
 
-    <!-- Overlay -->
-    <div id="overlay"></div>
+<!-- Overlay -->
+<div id="overlay"></div>
 
-    <!-- Cuadro del chatbot -->
-    <div id="chat-box">
-        <div id="chat-header">Chatbot</div>
-        <div id="chat-content"></div>
-        <div id="chat-footer">
-            <input type="text" id="chat-input" placeholder="Escribe un mensaje...">
-            <button id="send-button">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-            <button id="mic-button">
-                <i class="fas fa-microphone"></i>
-            </button>
-        </div>
+<!-- Cuadro del chatbot -->
+<div id="chat-box">
+    <div id="chat-header">
+        <img src="{{ Vite::asset('resources/images/chatbot2.png') }}" alt="Bot Icon" style="width: 40px; height: 40px; vertical-align: middle;">
+        DREBOT
     </div>
+    <div id="chat-content"></div>
+    <div id="chat-footer">
+        <input type="text" id="chat-input" placeholder="Escribe un mensaje...">
+        <button id="send-button">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+        <button id="mic-button">
+            <i class="fas fa-microphone"></i>
+        </button>
+    </div>
+</div>
 
     <script>
         const botButton = document.getElementById('bot-button');
