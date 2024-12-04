@@ -4,6 +4,7 @@ use App\Admin\Controllers\ModificadorRecesosController;
 use App\Admin\Controllers\VisitasAdminController;
 use App\Http\Controllers\BotController;
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CronometroController;
 use App\Http\Controllers\DniController;
 use App\Http\Controllers\ExportarExcelController;
@@ -67,3 +68,6 @@ Route::match(['get', 'post'], '/botman', [ChatbotController::class, 'handle']);
 Route::post('/bot/audio', [BotController::class, 'handleAudio'])->name('bot.audio');
 Route::post('/chatbot/message', [ChatbotController::class, 'handleMessage'])->name('chatbot.message');
 Route::post('/chatbot/audio', [ChatbotController::class, 'handleAudio'])->name('chatbot.audio');
+
+Route::post('/api/chat', [ChatController::class, 'handleChat']);
+

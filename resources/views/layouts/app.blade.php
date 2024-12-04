@@ -18,7 +18,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Estilos propios -->
-    @vite(['resources/css/styles.css', 'resources/js/script.js'])
+    @vite(['resources/css/styles.css', 'resources/js/script.js','resources/js/chatbot.js'])
+
+    
 
 </head>
 
@@ -61,6 +63,13 @@
             </button>
         </div>
     </div>
+
+    <form id="chat-form">
+        <textarea name="message" id="message" rows="3"></textarea>
+        <button type="submit">Enviar</button>
+    </form>
+    <div id="response"></div>
+    
 
     <script>
         const botButton = document.getElementById('bot-button');
@@ -193,6 +202,33 @@
             const audio = new Audio(audioUrl);
             audio.play();
         }
+
+    document.getElementById('chat-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = document.getElementById('message').value;
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify({ message }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            document.getElementById('response').innerText = data.response || data.error;
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('response').innerText = 'Ocurrió un error al procesar tu solicitud.';
+        }
+    });
+
     </script>
 </body>
 
