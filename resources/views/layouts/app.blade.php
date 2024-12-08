@@ -41,9 +41,9 @@
         </div>
     </div>
 
-    <!-- Botón del chatbot -->
+    <!-- Bot車n del chatbot -->
 <button id="bot-button">
-    <img src="{{ Vite::asset('resources/images/chatbot2.png') }}" alt="Bot Icon" style="width: 64px; height: 64px;">
+    <img src="{{ asset('images/chatbot2.png') }}" alt="Bot Icon" style="width: 64px; height: 64px;">
 </button>
 
 <!-- Overlay -->
@@ -52,7 +52,7 @@
 <!-- Cuadro del chatbot -->
 <div id="chat-box">
     <div id="chat-header">
-        <img src="{{ Vite::asset('resources/images/chatbot2.png') }}" alt="Bot Icon" style="width: 40px; height: 40px; vertical-align: middle;">
+        <img src="{{ asset('images/chatbot2.png') }}" alt="Bot Icon" style="width: 40px; height: 40px; vertical-align: middle;">
         DREBOT
     </div>
     <div id="chat-content"></div>
@@ -60,9 +60,6 @@
         <input type="text" id="chat-input" placeholder="Escribe un mensaje...">
         <button id="send-button">
             <i class="fas fa-paper-plane"></i>
-        </button>
-        <button id="mic-button">
-            <i class="fas fa-microphone"></i>
         </button>
     </div>
 </div>
@@ -91,7 +88,6 @@
 
         sendButton.addEventListener('click', sendMessage);
 
-        micButton.addEventListener('click', toggleMicrophone);
 
         function toggleChatbox() {
             const isVisible = chatBox.style.display === 'flex';

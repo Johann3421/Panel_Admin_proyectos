@@ -4,13 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Visita;
-use App\Models\Receso;
-use App\Models\Trabajador;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use GuzzleHttp\Client;
+
 
 class ChatbotController extends Controller
 {
@@ -19,96 +16,109 @@ class ChatbotController extends Controller
      */
     public function handleMessage(Request $request)
 {
+    try {
+        $message = strtolower(trim($request->input('message')));
+
+        // Normalizar mensaje
+        $normalizedMessage = $this->normalizeMessage($message);
+        
     $message = strtolower(trim($request->input('message')));
 
     // Normalizar mensaje para evitar errores ortográficos
     $normalizedMessage = $this->normalizeMessage($message);
 
-    // Determinar intención usando el clasificador, pero no sobrescribir si está en un flujo activo
+    // Determinar intención solo si no hay un flujo activo
+    $intent = null;
     if (!session()->has('registro_visita') && !session()->has('registro_receso')) {
-        $intent = $this->classifyIntent($normalizedMessage);
-    } else {
-        $intent = null;
+        $intent = $this->getIntent($normalizedMessage);
     }
 
+    // Comando explícito para cancelar cualquier flujo activo
+    if ($normalizedMessage === 'cancelar') {
+        if (session()->has('registro_visita')) {
+            session()->forget('registro_visita');
+            return response()->json(['response' => "❌ El proceso de registro de visita ha sido cancelado."]);
+        }
+        if (session()->has('registro_receso')) {
+            session()->forget('registro_receso');
+            return response()->json(['response' => "❌ El proceso de registro de receso ha sido cancelado."]);
+        }
+        return response()->json(['response' => "⚠️ No hay ningún proceso activo para cancelar."]);
+    }
+
+    // Lógica principal del chatbot
     switch (true) {
+        // Saludos generales
         case Str::contains($normalizedMessage, ['hola', 'buenos días', 'buenas tardes', 'saludos']):
             return response()->json([
-                'response' => "👋 ¡Hola! Soy tu asistente para el sistema de Registro de Visitas. Puedes pedirme:\n- 'Registrar visita'\n- 'Listar visitas activas'\n- 'Registrar receso'\n- 'Listar recesos activos'."
+                'response' => "👋 ¡Hola! Soy tu asistente para el sistema de Registro de Visitas. Puedes pedirme:\n- 'Registrar visita'\n- 'Listar visitas'\n- 'Registrar receso'\n- 'Listar recesos activos'\n Si te equivocas, puedes corregir un campo con la palabra 'corregir'\n y el campo que deseas corregir."
             ]);
 
-        case $intent === 'registrar_visita':
+        // Iniciar flujo de registro de visita
+        case $intent === 'registrar visita':
+            if (session()->has('registro_receso')) {
+                return response()->json([
+                    'response' => "⚠️ Actualmente estás registrando un receso. Finaliza o cancela ese proceso para registrar una visita."
+                ]);
+            }
             session(['registro_visita' => []]); // Inicializa el flujo de registro
             return response()->json([
                 'response' => "Vamos a registrar una visita. Por favor responde las siguientes preguntas paso a paso:\n1️⃣ ¿Cuál es el DNI del trabajador?"
             ]);
 
-        case session()->has('registro_visita'): // Manejo del flujo activo de registro de visita
+        // Manejar flujo activo de registro de visita
+        case session()->has('registro_visita'):
             return $this->handleRegistroVisita($normalizedMessage);
 
-        case $intent === 'registrar_receso':
+        // Iniciar flujo de registro de receso
+        case $intent === 'registrar receso':
+            if (session()->has('registro_visita')) {
+                return response()->json([
+                    'response' => "⚠️ Actualmente estás registrando una visita. Finaliza o cancela ese proceso para registrar un receso."
+                ]);
+            }
             session(['registro_receso' => []]);
             return response()->json([
                 'response' => "Vamos a registrar un receso. Por favor responde las siguientes preguntas paso a paso:\n1️⃣ ¿Cuál es el ID del trabajador?"
             ]);
 
+        // Manejar flujo activo de registro de receso
         case session()->has('registro_receso') && session()->missing('registro_receso.worker_id') && preg_match('/^\d+$/', $message):
             session(['registro_receso.worker_id' => $message]);
             return response()->json(['response' => "ID de trabajador registrado. Ahora, ¿cuántos minutos durará el receso?"]);
 
         case session()->has('registro_receso.worker_id') && preg_match('/^\d+$/', $message):
             $workerId = session('registro_receso.worker_id');
-            $duracion = (int)$message;
+            $duracion = $message;
 
-            // Registrar receso y limpiar sesión
-            $response = $this->registrarReceso($workerId, $duracion);
-            session()->forget('registro_receso');
+            session()->forget('registro_receso'); // Limpiar sesión para evitar conflictos
+            return $this->registrarReceso($workerId, $duracion);
 
-            return $response;
-
-        case $intent === 'listar_visitas':
+        // Listar visitas activas
+        case $intent === 'listar visitas':
             return $this->listarVisitas();
 
-        case $intent === 'listar_recesos':
+        // Listar recesos activos
+        case $intent === 'listar recesos':
             return $this->listarRecesos();
 
+        // Respuesta predeterminada
         default:
             return response()->json([
                 'response' => "🤖 Lo siento, no entendí eso. Por favor, intenta con algo como:\n- 'Registrar visita'\n- 'Listar visitas activas'\n- 'Registrar receso'\n- 'Listar recesos activos'."
             ]);
     }
-}
+    } catch (\Exception $e) {
+        // Registrar el error para depuración
+        \Log::error("Error en el chatbot: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
 
-
-public function classifyIntent($message)
-    {
-        $model = config('chatbot_model'); // Cargar el modelo desde config
-
-        $tokens = array_filter(preg_split('/\W+/', strtolower($message))); // Tokenizar
-        $vocab = $model['vocab'];
-        $wordCounts = $model['wordCounts'];
-        $intentCounts = $model['intentCounts'];
-
-        $totalIntents = array_sum($intentCounts);
-        $bestIntent = null;
-        $bestScore = -INF;
-
-        foreach ($intentCounts as $intent => $count) {
-            $score = log($count / $totalIntents); // Prior
-
-            foreach ($tokens as $token) {
-                $wordFrequency = $wordCounts[$intent][$token] ?? 0.01; // Suavizado
-                $score += log($wordFrequency / count($vocab));
-            }
-
-            if ($score > $bestScore) {
-                $bestScore = $score;
-                $bestIntent = $intent;
-            }
-        }
-
-        return $bestIntent;
+        // Retornar error como JSON
+        return response()->json([
+            'response' => "❌ Ocurrió un error inesperado. Por favor, intenta de nuevo más tarde.",
+            'error' => $e->getMessage() // Solo habilitar en desarrollo
+        ], 500);
     }
+}
 
 
     private function getIntent(string $message): string
@@ -135,71 +145,105 @@ public function classifyIntent($message)
 
 private function handleRegistroVisita(string $message)
 {
+    // Constantes para los campos requeridos y sus mensajes
+    $fieldMessages = [
+        'dni' => 'Por favor, ingresa el nombre del trabajador.',
+        'nombre' => 'Por favor, ingresa el tipo de persona (por ejemplo, "Natural" o "Pública/Privada").',
+        'tipopersona' => 'Por favor, ingresa el lugar de trabajo.',
+        'lugar' => 'Por favor, ingresa el motivo de la visita.',
+        'smotivo' => '✅ Visita registrada correctamente.'
+    ];
+
+    // Cancelar el proceso
+    if (strtolower($message) === 'cancelar') {
+        session()->forget('registro_visita');
+        return response()->json(['response' => "❌ El proceso de registro ha sido cancelado. Si deseas iniciar de nuevo, escribe 'registrar visita'."]);
+    }
+
+    // Reiniciar la sesión si el usuario empieza un nuevo registro
+    if (strtolower($message) === 'registrar visita') {
+        session()->forget('registro_visita');
+        return response()->json(['response' => "Vamos a registrar una visita. Por favor responde las siguientes preguntas paso a paso: 1️⃣ ¿Cuál es el DNI del trabajador?"]);
+    }
+
     // Obtener o inicializar la sesión de registro de visita
     $data = session('registro_visita', []);
 
-    // Paso 1: Captura del DNI
-    if (!isset($data['dni'])) {
-        if (preg_match('/^\d{8}$/', $message)) { // Validar formato de DNI
-            $data['dni'] = $message;
+    // Manejo de corrección de campos
+    if (Str::startsWith($message, 'corregir')) {
+        $field = strtolower(trim(Str::replace('corregir', '', $message))); // Extraer el campo a corregir
+        if (array_key_exists($field, $fieldMessages)) {
+            unset($data[$field]); // Eliminar el campo para forzar la corrección
             session(['registro_visita' => $data]);
-            return response()->json(['response' => "👍 Gracias. Ahora, ¿cuál es el nombre del trabajador?"]);
+            return response()->json(['response' => "🔄 Has solicitado corregir el campo '{$field}'. {$fieldMessages[$field]}"]);
         }
-        return response()->json(['response' => "⚠️ Por favor, proporciona un DNI válido (8 dígitos)."]);
+        return response()->json(['response' => "⚠️ No se puede corregir el campo '{$field}'. Los campos válidos son: " . implode(', ', array_keys($fieldMessages)) . "."]);
     }
 
-    // Paso 2: Captura del nombre
-    if (!isset($data['nombre'])) {
-        if (strlen($message) > 2) { // Asegurar que el nombre sea significativo
-            $data['nombre'] = $message;
+    // Procesar el campo pendiente más importante (en orden)
+    foreach ($fieldMessages as $field => $prompt) {
+        if (!isset($data[$field])) {
+            $validationResult = $this->validateField($field, $message);
+            if ($validationResult !== true) {
+                return response()->json(['response' => $validationResult]); // Respuesta de error en validación
+            }
+
+            // Guardar el valor validado
+            $data[$field] = $message;
             session(['registro_visita' => $data]);
-            return response()->json(['response' => "👍 Gracias. Ahora, ¿cuál es el tipo de persona (por ejemplo, 'Natural' o 'Publica/Privada')?"]);
-        }
-        return response()->json(['response' => "⚠️ Por favor, proporciona un nombre válido."]);
-    }
 
-    // Paso 3: Captura del tipo de persona
-    if (!isset($data['tipopersona'])) {
-        if (strlen($message) > 2) { // Validar un tipo significativo
-            $data['tipopersona'] = $message;
-            session(['registro_visita' => $data]);
-            return response()->json(['response' => "👍 Gracias. Ahora, ¿cuál es el lugar de trabajo?"]);
-        }
-        return response()->json(['response' => "⚠️ Por favor, proporciona un tipo de persona válido (por ejemplo, 'Natural' o 'Publica/Privada')."]);
-    }
+            // Si no es el último campo, solicitar el siguiente
+            if ($field !== 'smotivo') {
+                return response()->json(['response' => "👍 Gracias. {$prompt}"]);
+            }
 
-    // Paso 4: Captura del lugar de trabajo
-    if (!isset($data['lugar'])) {
-        if (strlen($message) > 2) { // Validar un lugar significativo
-            $data['lugar'] = $message;
-            session(['registro_visita' => $data]);
-            return response()->json(['response' => "👍 Gracias. Por último, ¿cuál es el motivo de la visita?"]);
-        }
-        return response()->json(['response' => "⚠️ Por favor, proporciona un lugar de trabajo válido."]);
-    }
-
-    // Paso 5: Captura del motivo de la visita
-    if (!isset($data['smotivo'])) {
-        if (strlen($message) > 2) { // Validar un motivo significativo
-            $data['smotivo'] = $message;
-
-            // Guardar en la base de datos
+            // Último campo: Registrar, incluir hora de ingreso/salida
+            $data['hora_ingreso'] = now('America/Lima')->toDateTimeString();
             Visita::create($data);
-
             session()->forget('registro_visita'); // Limpiar la sesión tras completar
-            return response()->json(['response' => "✅ Visita registrada correctamente."]);
+            return response()->json(['response' => "✅ Visita registrada correctamente con hora de ingreso: {$data['hora_ingreso']}"]);
         }
-        return response()->json(['response' => "⚠️ Por favor, proporciona un motivo válido."]);
     }
 
-    // Mensaje por defecto si algo sale mal
-    return response()->json(['response' => "⚠️ Ocurrió un error. Por favor, inténtalo de nuevo."]);
+    // Si todos los campos están completos, evitar repeticiones
+    return response()->json(['response' => "✅ Ya se ha completado el registro de esta visita."]);
+}
+
+/**
+ * Valida el valor de un campo según sus reglas específicas.
+ *
+ * @param string $field Nombre del campo a validar
+ * @param string $value Valor del mensaje recibido
+ * @return string|bool Mensaje de error si no es válido, true si es válido
+ */
+private function validateField(string $field, string $value)
+{
+    switch ($field) {
+        case 'dni':
+            if (!preg_match('/^\d{8}$/', $value)) {
+                return "⚠️ Por favor, proporciona un DNI válido (8 dígitos).";
+            }
+            break;
+
+        case 'nombre':
+        case 'tipopersona':
+        case 'lugar':
+        case 'smotivo':
+            if (strlen($value) <= 2) {
+                return "⚠️ Por favor, proporciona un valor válido para el campo '{$field}'.";
+            }
+            break;
+
+        default:
+            return "⚠️ Campo desconocido.";
+    }
+    return true;
 }
 
 
-
     private function listarVisitas()
-    {
+{
+    try {
         // Obtener todas las visitas activas (que no tienen hora de salida)
         $visitasActivas = DB::table('visitas')
             ->whereNull('hora_salida')
@@ -208,37 +252,68 @@ private function handleRegistroVisita(string $message)
         if ($visitasActivas->isEmpty()) {
             return response()->json([
                 'response' => "⚠️ No hay visitas activas en este momento."
-            ]);
+            ], 200);
         }
 
+        // Construir la respuesta
         $respuesta = "📋 Visitas activas:\n";
         foreach ($visitasActivas as $visita) {
-            $respuesta .= "- *{$visita->nombre}* (DNI: {$visita->dni}), motivo: {$visita->motivo}, entrada: {$visita->hora_entrada}.\n";
+            // Manejo seguro de los datos para evitar errores
+            $nombre = $visita->nombre ?? 'Sin nombre';
+            $dni = $visita->dni ?? 'Sin DNI';
+            $motivo = $visita->smotivo ?? 'Sin motivo';
+            $horaEntrada = $visita->hora_ingreso ?? 'Sin hora de entrada';
+
+            $respuesta .= "- *{$nombre}* (DNI: {$dni}), motivo: {$motivo}, entrada: {$horaEntrada}.\n";
         }
 
         return response()->json([
             'response' => $respuesta
-        ]);
+        ], 200);
+
+    } catch (\Exception $e) {
+        // Enviar detalles básicos del error en modo producción
+        return response()->json([
+            'response' => "❌ Ocurrió un error al intentar listar las visitas. Por favor, contacta con soporte.",
+            'debug' => env('APP_DEBUG') ? $e->getMessage() : "Error interno en el servidor"
+        ], 500);
     }
+}
 
     /**
      * Normaliza un mensaje para corregir errores comunes de escritura.
      */
     private function normalizeMessage(string $message): string
-    {
-        $replacements = [
-            'resgistrar' => 'registrar',
-            'reseso' => 'receso',
-            'tiemops' => 'tiempos',
-            'busccar' => 'buscar',
-        ];
+{
+    $replacements = [
+        // Correcciones comunes de escritura
+        'resgistrar' => 'registrar',
+        'reseso' => 'receso',
+        'tiemops' => 'tiempos',
+        'busccar' => 'buscar',
 
-        foreach ($replacements as $wrong => $correct) {
-            $message = str_replace($wrong, $correct, $message);
-        }
+        // Palabras clave relacionadas con intenciones
+        'visitaa' => 'visita',
+        'registrarr' => 'registrar',
+        'listaar' => 'listar',
+        'visitas activass' => 'visitas activas',
+        'recesoss' => 'recesos',
+        'mostarr' => 'mostrar',
+        'crearrr' => 'crear',
+    ];
 
-        return $message;
+    // Realiza las correcciones en el mensaje
+    foreach ($replacements as $wrong => $correct) {
+        $message = str_replace($wrong, $correct, $message);
     }
+
+    // Normaliza espacios múltiples
+    $message = preg_replace('/\s+/', ' ', $message);
+
+    // Retorna el mensaje corregido
+    return trim($message);
+}
+
 
     /**
      * Registrar un receso.
@@ -315,62 +390,5 @@ private function handleRegistroVisita(string $message)
 
         return response()->json(['response' => $respuesta]);
     }
-    public function handleAudio(Request $request)
-    {
-        $request->validate([
-            'audio' => 'required|file|mimetypes:audio/webm,audio/wav,audio/mpeg',
-        ]);
 
-        // Guardar el archivo de audio
-        $path = $request->file('audio')->store('audios', 'public');
-        $audioUrl = Storage::url($path);
-
-        // Simular transcripción de audio a texto (puedes integrar un servicio como Google Speech-to-Text aquí)
-        $transcribedMessage = $this->transcribeAudio($path);
-
-        // Manejar el mensaje como texto
-        $responseText = $this->handleTextMessage($transcribedMessage);
-
-        // Generar respuesta en audio (puedes integrar un servicio como Google TTS aquí)
-        $responseAudioUrl = $this->generateAudioResponse($responseText['response']);
-
-        return response()->json([
-            'response' => $responseText['response'],
-            'response_audio_url' => $responseAudioUrl,
-        ]);
-    }
-
-    /**
-     * Simular transcripción de audio a texto.
-     * Aquí puedes integrar un servicio de Speech-to-Text real.
-     */
-    private function transcribeAudio($audioPath)
-    {
-        // Esto es solo un simulacro. Reemplaza esta lógica con un servicio de transcripción real.
-        return "Mensaje transcrito del audio en {$audioPath}";
-    }
-
-    /**
-     * Generar respuesta de audio a partir de texto.
-     * Aquí puedes integrar un servicio de Text-to-Speech real.
-     */
-    private function generateAudioResponse($text)
-    {
-        $audioFileName = 'response_' . Str::random(10) . '.mp3';
-        $filePath = storage_path('app/public/audios/' . $audioFileName);
-
-        // Simular la generación de audio
-        file_put_contents($filePath, "Audio generado para: {$text}");
-
-        return Storage::url('audios/' . $audioFileName);
-    }
-
-    /**
-     * Manejar mensajes de texto del chatbot (usado internamente).
-     */
-    private function handleTextMessage($message)
-    {
-        // Reutiliza la lógica existente para manejar texto
-        return $this->handleMessage(new Request(['message' => $message]))->getData(true);
-    }
 }
