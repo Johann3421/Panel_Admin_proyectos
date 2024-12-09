@@ -12,6 +12,7 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\UserAuthController;
 use App\Http\Controllers\VisitaController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ChatController;
 
 
 // Redirige la raíz a la página de login
@@ -67,3 +68,5 @@ Route::match(['get', 'post'], '/botman', [ChatbotController::class, 'handle']);
 Route::post('/bot/audio', [BotController::class, 'handleAudio'])->name('bot.audio');
 Route::post('/chatbot/message', [ChatbotController::class, 'handleMessage'])->name('chatbot.message');
 Route::post('/chatbot/audio', [ChatbotController::class, 'handleAudio'])->name('chatbot.audio');
+
+Route::post('/api/chat', [ChatController::class, 'handleChat']);
