@@ -18,10 +18,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Estilos propios -->
-    @vite(['resources/css/styles.css', 'resources/js/script.js', 'resources/js/chatbot.js'])
+    @vite(['resources/css/styles.css', 'resources/js/script.js', 'resources/js/chatbot.js', 'resources/css/loader.css','resources/js/loader.js'])
 </head>
 
 <body>
+
+<!-- Loader Spinner -->
+    <div id="page-loader" class="page-loader">
+        <div class="spinner"></div>
+    </div>
     <div class="wrapper d-flex">
         <aside class="main-sidebar sidebar-dark-primary elevation-4" style="width: 250px;">
             @include('layouts.aside')

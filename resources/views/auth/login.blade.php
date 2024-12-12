@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Estilos y scripts -->
-    @vite(['resources/css/styles1.css', 'resources/js/script.js'])
+    @vite(['resources/css/styles1.css', 'resources/js/script.js','resources/js/loader.js','resources/css/loader.css'])
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.0.5/css/boxicons.min.css" rel="stylesheet">
     <title>Inicio de Sesión</title>
 </head>
 <body>
+    
     <!-- Contenedor de burbujas -->
     <div class="bubbles">
         <span></span>
@@ -20,7 +21,9 @@
         <span></span>
         <span></span>
     </div>
-
+    <div id="page-loader" class="page-loader">
+        <div class="spinner"></div>
+    </div>
     <!-- Contenedor del formulario -->
     <div class="l-form">
         <div class="form-container">
